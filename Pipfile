@@ -5,6 +5,9 @@ name = "pypi"
 
 [packages]
 argparse = "*"
+pyyaml = "*"
+requests = "*"
+csip = "*"
 
 [dev-packages]
 setuptools = "*"

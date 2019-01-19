@@ -1,5 +1,15 @@
 {
   "python.pythonPath": "C:\\Users\\Adam\\.virtualenvs\\orca-qVX4iEBC\\Scripts\\python.exe",
 "editor.tabSize": 4,
-"python.linting.enabled": true
+"python.linting.enabled": true,
+"python.unitTest.unittestEnabled": true,
+"python.unitTest.pyTestEnabled": false,
+"python.unitTest.nosetestsEnabled": false,
+"python.unitTest.unittestArgs": [
+    "-v", 
+    "-s",
+    ".",
+    "-p",
+    "*_test.py"
+]
 }
