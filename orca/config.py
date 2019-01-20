@@ -1,7 +1,12 @@
-import yaml
+import json
 import logging
 import os
 from pathlib import Path
+
+import yaml
+from jsonschema import validate
+
+from orca.schema import schema
 
 log = logging.getLogger(__name__)
 def find_config(filename="orca.yml"):
@@ -23,15 +28,12 @@ def find_config(filename="orca.yml"):
 def process_config(filename):
     with open(filename,'r') as stream:
         try:
-            config = yaml.safe_load(stream)
+            config = yaml.load(stream)
+            validate(config, schema)
             return config
         except yaml.YAMLError as e:
             log.error(e)
             raise OrcaConfigException("error loading, maybe use -f")
-
-def validate_config(config):
-
-    return True
 
 class OrcaConfigException(Exception):
     pass
