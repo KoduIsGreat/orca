@@ -1,9 +1,9 @@
 version : '1.0'
 steps:
   - service:
-      name: 'csip.nwm'
       host: 'ehs-csip-nwm.eastus.azurecontainer.io'
       port: '8080'
+      name: 'csip.nwm'
     config:
       - name: "comids"
         value: [8786017]

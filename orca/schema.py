@@ -6,10 +6,9 @@ schema = {
 
     "properties": {
         "version": { "type": "string"},
-        "id": "#/properties/steps",
         "steps" : {
             "type": "array",
-            "items" : "#definitions/step"
+            "items" :{"$ref": "#definitions/step"} 
         }
 
     },
@@ -21,7 +20,7 @@ schema = {
             "properties": {
                 "config": {
                     "type": "array",
-                    "items": "#definitions/configItem" 
+                    "items":{"$ref": "#definitions/configItem"} 
                 },
                 "service":{
                     "type": "object",
@@ -39,15 +38,8 @@ schema = {
             "type": "object",
             "properties": {
                 "name": {"type": "string"},
-                "value": {"type": ["string", "number", "object", "array"]}
-            },
-        }
-    },
-
-    # "constraints": {
-    #     "configItem": {
-    #         "id": "#/definitions/constraints/configItem",
-    #         "any"
-    #     }
-    # }
+                "value": {"type": ["number", "array", "string"]},
+            }
+        },
+    }
 }

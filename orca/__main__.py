@@ -1,3 +1,3 @@
+from orca.cli.commands import orca
 
-
-print('hello world!')
+orca()
