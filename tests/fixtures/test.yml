@@ -1,3 +1,15 @@
-test:
-  apples: 3
-  bananas: 5
+version : '1.0'
+steps:
+  - service:
+      name: 'csip.nwm'
+      host: 'ehs-csip-nwm.eastus.azurecontainer.io'
+      port: '8080'
+    config:
+      - name: "comids"
+        value: [8786017]
+      - name: "property"
+        value: 'streamflow'
+      - name: 'type'
+        value: 'short_range'
+      - name: 'fcTimesToHarvest'
+        value: [ 0 ]

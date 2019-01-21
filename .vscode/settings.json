@@ -11,5 +11,6 @@
     ".",
     "-p",
     "*_test.py"
-]
+],
+"editor.detectIndentation": true
 }
