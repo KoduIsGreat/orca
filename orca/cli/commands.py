@@ -11,7 +11,7 @@ def pull(**kwargs):
 
 @orca.command()
 def validate(**kwargs):
-    print('called validate')
+    find_config()
 
 @orca.command()
 def run(**kwargs):

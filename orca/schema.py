@@ -5,10 +5,10 @@ schema = {
     "required": ["version"],
 
     "properties": {
-        "version": { "type": "string"},
-        "steps" : {
+        "version": {"type": "string"},
+        "steps": {
             "type": "array",
-            "items" :{"$ref": "#definitions/step"} 
+            "items": {"$ref": "#definitions/step"}
         }
 
     },
@@ -20,11 +20,11 @@ schema = {
             "properties": {
                 "config": {
                     "type": "array",
-                    "items":{"$ref": "#definitions/configItem"} 
+                    "items": {"$ref": "#definitions/configItem"}
                 },
-                "service":{
+                "service": {
                     "type": "object",
-                    "properties":{
+                    "properties": {
                         "host": {"type": "string"},
                         "port": {"type": "string"},
                         "name": {"type": "string"}

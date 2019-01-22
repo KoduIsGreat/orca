@@ -9,6 +9,8 @@ import collections
 from orca.schema import schema
 
 log = logging.getLogger(__name__)
+
+
 def find_config(filename="orca.yml"):
     file = os.path.join(os.getcwd(),filename)
     current_working_path = Path(file)
@@ -35,6 +37,7 @@ def process_config(filename):
             log.error(e)
             raise OrcaConfigException("error loading, maybe use -f")
 
+
 class OrcaConfigException(Exception):
     pass
 
@@ -42,6 +45,7 @@ class OrcaConfigException(Exception):
 def to_url(service):
     url = service['host'] +":" +service['port'] +'/'+service['name']
     return "http://{}".format(url)
+
 
 class OrcaConfig(object):
 
