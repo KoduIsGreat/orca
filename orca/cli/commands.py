@@ -12,7 +12,7 @@ def pull(**kwargs):
 
 @orca.command()
 def validate(**kwargs):
-    find_config()
+    pass
 
 @orca.command()
 @click.option('-v', '--verbose', is_flag=True)
@@ -20,7 +20,7 @@ def validate(**kwargs):
 @click.argument('args', nargs=-1)
 def run(file, verbose, args):
     """Run a workflow."""
-    a = process_config(file)
-    print('process run ' + json.dumps(a, indent=2))
-    config = OrcaConfig(a, args)
+    config = process_config(file)
+    print('process run ' + json.dumps(config, indent=2))
+    config = OrcaConfig(config, args)
     config.execute()

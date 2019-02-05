@@ -35,12 +35,12 @@ class OrcaConfig(object):
         self.__set_vars(config.get('vars',{}), args)
         #self.client_dict = self.__create_client_dict__(config)
 
-    def _resolve(value: object) -> object:
+    def _resolve(self, value: object) -> object:
         """resolve the value against the globals"""
         exec("global _tmp_\n_tmp_={}".format(value))
         return eval("_tmp_")
 
-    def _get_node_info(node:str) -> Dict:
+    def _get_node_info(self, node:str) -> Dict:
         """Split the step node into type and name/cond"""
         p = re.match(r'\s*(?P<type>\w*)\s*(\((?P<meta>.*?)\))?', node)
         return p.groupdict()
@@ -55,7 +55,7 @@ class OrcaConfig(object):
         for step in sequence:
             node = next(iter(step))
             print(" --- step: '{}'".format(node))
-            nodeinfo =  OrcaConfig._get_node_info(node)
+            nodeinfo =  self._get_node_info(node)
             meta = nodeinfo['meta']
             nodetype = nodeinfo['type']
             if nodetype == "payload":
@@ -71,14 +71,14 @@ class OrcaConfig(object):
         
     def __handle_payload(self, payload_:Dict, name:str) -> None:
         for key, value in payload_.items():
-            print("  handle props: {0} -> {1}".format(key,str(value)));
-            payload[name + "." + key] = OrcaConfig._resolve(value)
+            print("  handle props: {0} -> {1}".format(key,str(value)))
+            payload[name + "." + key] = self._resolve(value)
             
     def __handle_service(self, service:Dict, name:str) -> None:
         if 'file' in service:
             print("  calling local: " + name)
         elif 'url' in service:
-            _url = OrcaConfig._resolve(service['url'])
+            _url = self._resolve(service['url'])
             print("  calling remote: " + _url)
                 
     def __handle_if(self, sequence:Dict, cond:str) -> None:
