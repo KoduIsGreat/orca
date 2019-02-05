@@ -30,7 +30,7 @@ class OrcaConfigException(Exception):
     
 class OrcaConfig(object):
 
-    def __init__(self, config: Dict, args: List[str]):
+    def __init__(self, config: Dict, args: List[str] = None):
         self.workflow = config['workflow']
         self.__set_vars(config.get('vars',{}), args)
         #self.client_dict = self.__create_client_dict__(config)
