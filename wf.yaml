@@ -31,7 +31,10 @@ vars:
   
   # map the first command line argument
   url : args[1]
-  
+
+  add: |
+    def add(x,y):
+        return x+y
   # another string
   base_nwm_url: str('http://ehs-csip-nwm.eastus.azurecontainer:8080')
   
@@ -57,7 +60,7 @@ workflow:
 
   - payload (ttt):
       fcTimesToHarvest: 40
-      #carry: _
+      foo: _
       test: payload.start.kind + '_olaf'
       newtemp : payload.start.temp + 100.5
 
