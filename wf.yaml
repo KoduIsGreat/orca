@@ -9,7 +9,8 @@ version: 0.1
       
 conf:
   trace: file.txt
-  
+dependencies:
+  - os
 vars:
   # define a string, must be double quoted! 
   file: "'test'"
@@ -21,7 +22,7 @@ vars:
   val1: 12
   
   # access the environment
-  ttt: os.environ['HOME']
+  ttt: environ['HOME']
   
   # concat a variable
   streamflow : prop + str('_test')
@@ -32,9 +33,6 @@ vars:
   # map the first command line argument
   url : args[1]
 
-  add: |
-    def add(x,y):
-        return x+y
   # another string
   base_nwm_url: str('http://ehs-csip-nwm.eastus.azurecontainer:8080')
   

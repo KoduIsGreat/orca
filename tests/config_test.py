@@ -28,5 +28,12 @@ class OrcaConfigTest(unittest.TestCase):
         config.write_config( fmt='yaml')
         assert 4 == len(config.workflow)
 
+    def test_comprehensive(self):
+        path = os.path.join(fixture_path, 'fixtures', 'comprehensive_example.yaml')
+        yaml = process_config(open(path,'r'))
+        config = OrcaConfig(yaml)
+        assert config is not None
+        config.execute()
+
 
 if __name__ == '__main__': unittest.main()

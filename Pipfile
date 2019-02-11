@@ -11,6 +11,7 @@ csip = "*"
 jsonschema = "*"
 click = "*"
 dotted = "*"
+bs4 = "*"
 
 [dev-packages]
 setuptools = "*"

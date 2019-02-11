@@ -1,5 +1,5 @@
 {
-  "python.pythonPath": "C:\\Users\\Adam\\.virtualenvs\\orca-qVX4iEBC\\Scripts\\python.exe",
+  "python.pythonPath": "C:\\Users\\adamshelton\\.virtualenvs\\orca-qVX4iEBC\\Scripts\\python.exe",
 "editor.tabSize": 4,
 "python.linting.enabled": true,
 "python.unitTest.unittestEnabled": true,
@@ -12,5 +12,6 @@
     "-p",
     "*_test.py"
 ],
-"editor.detectIndentation": true
+"editor.detectIndentation": true,
+"python.linting.pylintEnabled": true
 }

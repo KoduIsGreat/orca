@@ -43,6 +43,28 @@ workflow:
   - service (aggregator):
       csip: str('http://localhost:8082/csip.temporal-aggregator/d/temporal/parameter/1.0')
 
+  - async:
+      onComplete: 'job finished'
+      onError: ' async task error'
+      tasks:
+        - payload (stats):
+            timeSeries: service.aggregator.data
+
+        - service (stats):
+            csip: str('http://localhost:8082/csip.temporal-aggregator/d/temporal/parameter/1.0')
+
+        - payload (normalization):
+            timeSeries: service.aggregator.data
+            operation: str('basic')
+
+        - service (normalization):
+            csip: str('http://localhost:8082/csip.ts-normalize/d/norm/1.0')
+
+        - payload (integral):
+            timeSeries: service.aggregator.data
+
+        - service (intergral):
+            csip: str('http://localhost:8082/csip.temporal-aggregator/d/temporal/parameter/1.0')
 #- payload (statistics):
 #    timeSeries: services.aggregator.data
 #- service (statistics):

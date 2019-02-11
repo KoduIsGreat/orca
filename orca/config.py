@@ -1,15 +1,13 @@
 import json
 import logging
-import os
 import yaml
 import re
-
+import importlib
 from csip import Client
-#from jsonschema import validate
-#from orca.schema import schema
-from typing import List, Dict, TextIO, Any
-from dotted.collection import DottedCollection, DottedDict, DottedList
-from collections import OrderedDict
+from typing import List, Dict, TextIO
+
+import requests
+from dotted.collection import DottedCollection, DottedDict
 log = logging.getLogger(__name__)
 
 
@@ -27,8 +25,6 @@ class Service(object):
 
     def __init__(self, url: str,):
         self.url = url
-        self.is_csip = False
-
 
 class OrcaConfigFactory(object):
 
@@ -45,7 +41,7 @@ class OrcaConfigFactory(object):
         self.config['conf'] = {'trace': 'file.txt'}
 
     def __build_var_stub(self):
-        self.config['vars'] = OrderedDict()
+        self.config['vars'] = dict()
 
     def __extract_payload(self, csip_response: Dict) -> Dict:
         return csip_response
@@ -68,13 +64,14 @@ class OrcaConfigFactory(object):
         self.config.clear()
         self.__build_meta(name, description, version)
         self.__build_conf()
-        # self.__build_var_stub()
+        self.__build_var_stub()
         self.__build_workflow()
         return OrcaConfig(self.config)
  
 
 # all payload data during processing. must be global!
-payload = DottedDict()   
+payload = DottedDict()
+service = DottedDict()
 
 
 class OrcaConfigException(Exception):
@@ -84,10 +81,19 @@ class OrcaConfigException(Exception):
 class OrcaConfig(object):
 
     def __init__(self, config: Dict, args: List[str] = None):
-        self.config = config
+        self.conf = config.get('conf', {})
+        self.deps = config.get('dependencies', {})
         self.workflow = config['workflow']
+        self.__resolve_dependencies()
         self.__set_vars(config.get('vars', {}), args if args is not None else [])
-        #self.client_dict = self.__create_client_dict__(config)
+
+    def __resolve_dependencies(self):
+        for dep in self.deps:
+            try:
+                globals().update(importlib.import_module(dep).__dict__)
+            except OrcaConfigException as e:
+                log.error("Orca could not resolve the {0} dependency".format(dep))
+
 
     def __resolve(self, value: object) -> object:
         """resolve the value against the globals"""
@@ -131,14 +137,52 @@ class OrcaConfig(object):
         for key, value in payload_.items():
             print("  handle props: {0} -> {1}".format(key,str(value)))
             payload[name + "." + key] = self.__resolve(value)
-            
-    def __handle_service(self, service:Dict, name:str) -> None:
-        if 'file' in service:
+
+    def __handle_csip_result(self, client: Client, name:str) ->None:
+        for k, v in client.data.items():
+            print(" handling result props: {0} -> {1}".format(k, str(v)))
+            service[name + "." + k] = v['value']
+
+    def __handle_requests_result(self, response, name:str) -> None:
+        for k,v in response.content:
+            print(" handling req result props: {0} -> {1}".format(k, str(v)))
+            service[name + "." + k] = v
+
+    def __handle_csip_client(self, url: object, name: str) -> None:
+        client = Client()
+        for key, value in  payload[name].items():
+            if isinstance(value, DottedCollection):
+                client.add_data(key,value.to_python())
+            else:
+                client.add_data(key,value)
+        self.__handle_csip_result(client.execute(url), name)
+
+    def __handle_requests_client(self, url:str, serv:Dict, name:str) -> None:
+        if 'method' not in serv:
+            raise OrcaConfigException("requests service operator must include method: service {0}".format(name))
+        if serv['method'] == 'GET':
+            self.__handle_requests_result(requests.get(url,params=serv['params']), name)
+        elif serv['method'] == 'POST':
+            self.__handle_requests_result(requests.post(url, payload[name]), name)
+
+    def __handle_file_client(self, path:str, name:str) -> None:
+        pass
+
+    def __handle_service(self, serv:Dict, name:str) -> None:
+        if 'file' in serv:
             print("  calling local: " + name)
-        elif 'url' in service:
-            _url = self.__resolve(service['url'])
-            print("  calling remote: " + _url)
-                
+            _file = self.__resolve(serv['file'])
+            self.__handle_file_client(_file, name)
+        elif 'csip' in serv:
+            _url = self.__resolve(serv['csip'])
+            log.info("  calling remote csip: " + _url)
+            self.__handle_csip_client(_url,name)
+        elif 'url' in serv:
+            _url = self.__resolve(serv['url'])
+            log.info('calling remote url {0}', _url)
+            self.__handle_requests_client(_url, name)
+
+
     def __handle_if(self, sequence:Dict, cond:str) -> None:
         if eval(cond):
             self.__handle_sequence(sequence)
