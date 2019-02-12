@@ -1,32 +1,27 @@
-from orca.config import process_config, OrcaConfig, OrcaConfigFactory, Service
+from orca.config import process_config, OrcaConfig
 import click
 import json
+
 
 @click.group()
 def orca():
     pass
 
-@orca.command()
-def init():
-    urls = input("List url's of services that you wish to create a workflow for separated by comma:\n")
-    url_array = urls.split(',')
-    print(url_array)
-    services = [Service(url) for url in url_array]
-    factory = OrcaConfigFactory( services)
-    name = input("Name of Workflow: ")
-    description = input("Description of workflow: ")
-    version = input("Version of workflow: ")
-    config = OrcaConfig(factory.create(name, description, version))
-    config.write_config()
 
 @orca.command()
-def pull(**kwargs):
-    print('called pull')
-
-
-@orca.command()
-def validate(**kwargs):
-    pass
+@click.argument('file', type=click.File('r'))
+@click.argument('name', type=click.STRING)
+@click.argument('description', type=click.STRING)
+@click.option('--format', type=click.Choice(['json', 'yml']))
+def init(file, name, description, format):
+    """
+    Initialize a workflow from a services file
+    """
+    format = 'yml' if format is None else 'json'
+    config = process_config(file)
+    orca_config = OrcaConfig(config)
+    orca_config.init()
+    orca_config.write_config(name, description, format)
 
 
 @orca.command()
@@ -39,3 +34,15 @@ def run(file, verbose, args):
     print('process run ' + json.dumps(config, indent=2))
     config = OrcaConfig(config, args)
     config.execute()
+
+
+
+# @orca.command()
+# @click.group()
+# def service():
+#     pass
+#
+# @service.command()
+# def ls():
+#     pass
+

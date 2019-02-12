@@ -34,37 +34,38 @@ workflow:
       property: str('streamflow')
       type: str('short_range')
   - service (nwm):
-      csip: str('http://ehs-csip-nwm.eastus.azurecontainer.io:8080/csip.nwm/d/netcdf/1.0')
+      csip: http://ehs-csip-nwm.eastus.azurecontainer.io:8080/csip.nwm/d/netcdf/1.0
 
   - payload (aggregator):
       calc: str('sum')
       type: str('equals')
       timeSeries: service.nwm.forecasts
   - service (aggregator):
-      csip: str('http://localhost:8082/csip.temporal-aggregator/d/temporal/parameter/1.0')
+      csip: http://localhost:8084/csip.temporal-aggregator/d/temporal/parameter/1.0
 
-  - async:
-      onComplete: 'job finished'
-      onError: ' async task error'
-      tasks:
-        - payload (stats):
-            timeSeries: service.aggregator.data
-
-        - service (stats):
-            csip: str('http://localhost:8082/csip.temporal-aggregator/d/temporal/parameter/1.0')
-
-        - payload (normalization):
-            timeSeries: service.aggregator.data
-            operation: str('basic')
-
-        - service (normalization):
-            csip: str('http://localhost:8082/csip.ts-normalize/d/norm/1.0')
-
-        - payload (integral):
-            timeSeries: service.aggregator.data
-
-        - service (intergral):
-            csip: str('http://localhost:8082/csip.temporal-aggregator/d/temporal/parameter/1.0')
+#  - fork:
+#      onComplete: 'job finished'
+#      onError: ' async task error'
+#      tasks:
+#        - payload (stats):
+#            timeSeries: service.aggregator.data
+#
+#        - service (stats):
+#            csip: str('http://localhost:8082/csip.temporal-aggregator/d/temporal/parameter/1.0')
+#            async: true
+#
+#        - payload (normalization):
+#            timeSeries: service.aggregator.data
+#            operation: str('basic')
+#
+#        - service (normalization):
+#            csip: str('http://localhost:8082/csip.ts-normalize/d/norm/1.0')
+#
+#        - payload (integral):
+#            timeSeries: service.aggregator.data
+#
+#        - service (intergral):
+#            csip: str('http://localhost:8082/csip.temporal-aggregator/d/temporal/parameter/1.0')
 #- payload (statistics):
 #    timeSeries: services.aggregator.data
 #- service (statistics):

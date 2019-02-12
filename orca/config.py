@@ -10,6 +10,15 @@ import requests
 from dotted.collection import DottedCollection, DottedDict
 log = logging.getLogger(__name__)
 
+# this is temporary for demonstration purposes but should be replaced with api call to service registry
+service_dict = {
+    'csip.nwm': {
+        'csip': 'http://ehs-csip-nwm.eastus.azurecontainer.io:8080/csip.nwm/d/netcdf/1.0'},
+    'csip.temporal-aggregator': {
+        'csip': 'http://localhost:8084/csip.temporal-aggregator/d/temporal/parameter/1.0'
+    }
+}
+
 
 def process_config(file: TextIO) -> Dict:
     try:
@@ -26,49 +35,6 @@ class Service(object):
     def __init__(self, url: str,):
         self.url = url
 
-class OrcaConfigFactory(object):
-
-    def __init__(self, services: List[Service]):
-        self.services = services
-        self.config: Dict = dict()
-    
-    def __build_meta(self, name: str, description: str, version: str):
-        self.config['name'] = name
-        self.config['description'] = description
-        self.config['version'] = version
-
-    def __build_conf(self):
-        self.config['conf'] = {'trace': 'file.txt'}
-
-    def __build_var_stub(self):
-        self.config['vars'] = dict()
-
-    def __extract_payload(self, csip_response: Dict) -> Dict:
-        return csip_response
-
-    def __extract_csip_payload(self, client: Client):
-        data = dict()
-        for key, value in client.data:
-            print("key {0} = {1} ".format(key, str(value)))
-
-    def __build_workflow(self):
-        client = Client()
-        steps: List = list()
-        for service in self.services:
-            response = client.get_capabilities(service.url).data
-            steps.append({'payload': self.__extract_payload(response)})
-            steps.append({'service': {'url': service.url}})
-        self.config['workflow'] = steps
-
-    def create(self, name: str, description:str, version:str):
-        self.config.clear()
-        self.__build_meta(name, description, version)
-        self.__build_conf()
-        self.__build_var_stub()
-        self.__build_workflow()
-        return OrcaConfig(self.config)
- 
-
 # all payload data during processing. must be global!
 payload = DottedDict()
 service = DottedDict()
@@ -83,9 +49,10 @@ class OrcaConfig(object):
     def __init__(self, config: Dict, args: List[str] = None):
         self.conf = config.get('conf', {})
         self.deps = config.get('dependencies', {})
+        self.vars = config.get('vars', {})
         self.workflow = config['workflow']
         self.__resolve_dependencies()
-        self.__set_vars(config.get('vars', {}), args if args is not None else [])
+        self.__set_vars(self.vars, args if args is not None else [])
 
     def __resolve_dependencies(self):
         for dep in self.deps:
@@ -111,11 +78,50 @@ class OrcaConfig(object):
             try:
                 exec("global {0}\n{0}={1}".format(key,val))
                 print("var {0} = {1} -> {2}".format(key, str(val), str(eval(key))))
-            except IndexError:
-                msg = "Invalid argument position for key {0} and value {1}".format(key,val)
-                raise OrcaConfigException(msg)
-            
-    def __handle_sequence(self, sequence:Dict) -> None:
+            except Exception as e:
+                raise OrcaConfigException(e)
+    def __extract_csip_payload(self, client: Client) -> Dict:
+        d = dict()
+        for k,v in client.data.items():
+            d[k] = v['value']
+        return d
+    def __build_csip_payload_step(self, name: str, service: Dict):
+        payload_data = self.__extract_csip_payload(Client().get_capabilities(service.get('csip')))
+        node_meta = 'payload ({0})'.format(name)
+        return {node_meta: payload_data}
+
+    def __build_service_step(self, name: str, service: Dict):
+        node_meta = 'service ({0})'.format(name)
+        return {node_meta: {'csip': service.get('csip')}}
+
+    def __init_service(self, name: str, service: Dict) -> Dict:
+
+        if 'csip' in service:
+            return {
+                'payload': self.__build_csip_payload_step(name, service),
+                'service': self.__build_service_step(name, service)
+            }
+
+    def __init_sequence(self, sequence: Dict) -> None:
+        new_sequence = list()
+        for step in sequence:
+            node = next(iter(step))
+            print(" --- exploding step: '{}'".format(node))
+            node_info = self.__get_node_info(node)
+            meta = node_info['meta']
+            node_type = node_info['type']
+            if node_type == 'service':
+                try:
+                    payload_and_service = self.__init_service(meta, service_dict.get(meta))
+                    new_sequence.append(payload_and_service.get('payload'))
+                    new_sequence.append(payload_and_service.get('service'))
+                except KeyError as e:
+                    raise OrcaConfigException(e)
+            else:
+                raise OrcaConfigException('Invalid, Orca element to initalize')
+        self.workflow = new_sequence
+
+    def __handle_sequence(self, sequence: Dict) -> None:
         for step in sequence:
             node = next(iter(step))
             print(" --- step: '{}'".format(node))
@@ -135,7 +141,7 @@ class OrcaConfig(object):
         
     def __handle_payload(self, payload_:Dict, name:str) -> None:
         for key, value in payload_.items():
-            print("  handle props: {0} -> {1}".format(key,str(value)))
+            print("  handle props: {0} -> {1}".format(key, str(value)))
             payload[name + "." + key] = self.__resolve(value)
 
     def __handle_csip_result(self, client: Client, name:str) ->None:
@@ -143,45 +149,50 @@ class OrcaConfig(object):
             print(" handling result props: {0} -> {1}".format(k, str(v)))
             service[name + "." + k] = v['value']
 
-    def __handle_requests_result(self, response, name:str) -> None:
+    def __handle_requests_result(self, response, name: str) -> None:
         for k,v in response.content:
             print(" handling req result props: {0} -> {1}".format(k, str(v)))
             service[name + "." + k] = v
 
     def __handle_csip_client(self, url: object, name: str) -> None:
-        client = Client()
-        for key, value in  payload[name].items():
-            if isinstance(value, DottedCollection):
-                client.add_data(key,value.to_python())
-            else:
-                client.add_data(key,value)
-        self.__handle_csip_result(client.execute(url), name)
+        try:
+            client = Client()
+            for key, value in payload[name].items():
+                if isinstance(value, DottedCollection):
+                    client.add_data(key, value.to_python())
+                else:
+                    client.add_data(key, value)
+            self.__handle_csip_result(client.execute(url), name)
+        except requests.exceptions.HTTPError as e:
+            raise OrcaConfigException(e)
 
-    def __handle_requests_client(self, url:str, serv:Dict, name:str) -> None:
-        if 'method' not in serv:
+    def __handle_requests_client(self, url: str, service: Dict, name: str) -> None:
+        if 'method' not in service:
             raise OrcaConfigException("requests service operator must include method: service {0}".format(name))
-        if serv['method'] == 'GET':
-            self.__handle_requests_result(requests.get(url,params=serv['params']), name)
-        elif serv['method'] == 'POST':
-            self.__handle_requests_result(requests.post(url, payload[name]), name)
+        if service['method'] == 'GET':
+            self.__handle_requests_result(requests.get(url, params=service['params']), name)
+        elif service['method'] == 'POST':
+            if isinstance(payload[name], DottedCollection):
+                self.__handle_requests_result(requests.post(url, payload[name].to_python()), name)
+            else:
+                self.__handle_requests_result(requests.post(url,payload[name]), name)
 
-    def __handle_file_client(self, path:str, name:str) -> None:
+    def __handle_file_client(self, path: str, name: str) -> None:
         pass
 
-    def __handle_service(self, serv:Dict, name:str) -> None:
-        if 'file' in serv:
+    def __handle_service(self, service: Dict, name: str) -> None:
+        if 'file' in service:
             print("  calling local: " + name)
-            _file = self.__resolve(serv['file'])
+            _file = self.__resolve(service['file'])
             self.__handle_file_client(_file, name)
-        elif 'csip' in serv:
-            _url = self.__resolve(serv['csip'])
-            log.info("  calling remote csip: " + _url)
-            self.__handle_csip_client(_url,name)
-        elif 'url' in serv:
-            _url = self.__resolve(serv['url'])
+        elif 'csip' in service:
+            # _url = self.__resolve(service['csip'])
+            # log.info("  calling remote csip: " + _url)
+            self.__handle_csip_client(service['csip'], name)
+        elif 'url' in service:
+            _url = self.__resolve(service['url'])
             log.info('calling remote url {0}', _url)
-            self.__handle_requests_client(_url, name)
-
+            self.__handle_requests_client(_url, service, name)
 
     def __handle_if(self, sequence:Dict, cond:str) -> None:
         if eval(cond):
@@ -190,15 +201,32 @@ class OrcaConfig(object):
     def __handle_while(self, sequence:Dict, cond:str) -> None:
         while eval(cond):
             self.__handle_sequence(sequence)
-                           
+
+    def __create(self, name: str, description: str) -> Dict:
+        return {
+            'apiVersion': '1.0',
+            'name': name,
+            'description': description,
+            'version': '0.1',
+            'dependencies': self.deps,
+            'conf': self.conf,
+            'vars': self.vars,
+            'workflow': self.workflow
+        }
+
     def execute(self) -> None:
         self.__handle_sequence(self.workflow)
         print(payload)
 
-    def write_config(self, fmt: str ='yaml'):
-        if fmt == 'yaml':
-            with open('read_after_write_test.yml', 'w') as yaml_file:
-                yaml.dump(self.config, yaml_file, default_flow_style=False)
+    def init(self) -> None:
+        self.__init_sequence(self.workflow)
+
+    def write_config(self, name: str, description: str, fmt: str ='yml'):
+        if fmt == 'yml':
+            with open(name+'.yml', 'w') as yml_file:
+                yaml.dump(self.__create(name, description), yml_file, default_flow_style=False)
         elif fmt == 'json':
-            with open('orca.json', 'w') as json_file:
-                json.dump(self.config, json_file)
+            with open(name+'.json', 'w') as json_file:
+                json.dump(self.__create(name, description), json_file, indent=2)
+        else:
+            raise OrcaConfigException('{0} is not a supported workflow format'.format(fmt))
