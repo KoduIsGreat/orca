@@ -12,12 +12,12 @@ def orca():
 @click.argument('file', type=click.File('r'))
 @click.argument('name', type=click.STRING)
 @click.argument('description', type=click.STRING)
-@click.option('--format', type=click.Choice(['json', 'yml']))
+@click.option('--format', type=click.Choice(['json', 'yml', 'yaml'],))
 def init(file, name, description, format):
     """
     Initialize a workflow from a services file
     """
-    format = 'yml' if format is None else 'json'
+    format = 'yml' if format is None else format
     config = process_config(file)
     orca_config = OrcaConfig(config)
     orca_config.init()

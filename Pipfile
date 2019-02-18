@@ -12,6 +12,8 @@ jsonschema = "*"
 click = "*"
 dotted = "*"
 bs4 = "*"
+docker = "*"
+pandas = "*"
 
 [dev-packages]
 setuptools = "*"
