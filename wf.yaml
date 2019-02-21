@@ -1,22 +1,24 @@
-apiversion : orca/'1.0'
+apiversion: orca/'1.0'
 
 name: Example
 description: |
       This is a test workflow.
       blah, blah....
 
-version: 0.1
-      
+version: '0.1'
+
 conf:
   trace: file.txt
+
 dependencies:
   - os
-vars:
-  # define a string, must be double quoted! 
-  file: "'test'"
+  
+var:
+  # define a string 
+  file: 'tes'
   
   # set a string
-  prop: str('streamflow')
+  prop: 'streamflow'
   
   # set a numerical value
   val1: 12
@@ -25,19 +27,19 @@ vars:
   ttt: environ['HOME']
   
   # concat a variable
-  streamflow : prop + str('_test')
+  streamflow : var.prop + '_test'
   
   # compute a variable
-  bb : val1 + 10
+  bb : var.val1 + 10
   
   # map the first command line argument
   url : args[1]
 
   # another string
-  base_nwm_url: str('http://ehs-csip-nwm.eastus.azurecontainer:8080')
+  base_nwm_url: 'http://ehs-csip-nwm.eastus.azurecontainer:8080'
   
   # lambda function, must be quoted.
-  func_a : "lambda x, y: x * y"
+  func_a: "lambda x, y: x * y"
   
   threshold: int(args[2])
   
@@ -47,14 +49,20 @@ workflow:
 
   - payload (start): 
       # name : value
-      kind: streamflow
-      dc: func_a(5 , bb)
-      type: "'short_range'"
+      kind: var.streamflow
+      dc: var.func_a(5 , var.bb)
+      type: 'short_range'
       temp: 100
       #fcTimesToHarvest: [0]
 
   - service (nwm):
-      url: base_nwm_url + "/csip-nwm"
+      csip: var.base_nwm_url + "/csip-nwm"
+      params:
+        kind: var.streamflow
+        dc: var.func_a(5 , var.bb)
+        type: 'short_range'
+        temp: 100
+        #fcTimesToHarvest: [0]
 
   - payload (ttt):
       fcTimesToHarvest: 40

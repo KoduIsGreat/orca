@@ -1,0 +1,39 @@
+apiversion: orca/'1.0'
+
+version: '0.1.1'
+
+schedule: 00 09-18 * * 1-5
+
+dependencies: 
+  - pandas
+  
+var:
+  file: 'testtt'
+  counter: 5
+  b: var.file + 'lsls'
+  
+job:
+  - for v, range(1, var.counter):
+    - task: example
+      bash: |
+            echo "called $FILE $IDX" 
+            date
+      inputs:
+        FILE: var.file
+        IDX: v
+        
+  - for d, pandas.date_range(start='1/1/2018', end='1/08/2018', freq='D'):
+    - task: start2
+      bash: | 
+            echo "Running the forecast at '$DATE'"
+            echo "..."
+            sleep 1
+            
+      inputs:
+        DATE: d
+        
+  - task: last 
+    python: 'a.py'
+    
+     
+     

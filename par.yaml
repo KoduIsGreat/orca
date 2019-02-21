@@ -1,0 +1,33 @@
+apiversion: orca/'1.0'
+
+version: '0.1'
+
+var:
+  file: 'tes'
+  
+job:
+  - fork:
+     # first group of tasks
+     -  - task: start1
+          python: 'a.py'
+        - task: start2
+          bash: date
+        - task: start3
+          python: 'a.py'
+        - task: start4
+          bash: date
+
+     # second group      
+     -  - task: start6
+          python: 'a.py'
+     
+     # third group     
+     -  - task: start5
+          python: 'a.py'
+        - task: start51
+          bash: date
+
+  # start3, start4, and start51 will join here          
+  - task: last
+    python: 'a.py'
+     

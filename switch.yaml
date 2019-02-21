@@ -1,0 +1,34 @@
+apiversion: orca/'1.0'
+
+version: '0.1'
+
+var:
+  select: args[0]
+  th: 12
+  
+job:
+  - switch var.select:
+  
+     'test5':
+        - task: start5_1 
+          python: 'a.py'
+        - task: start5_2 
+          python: 'a.py'
+
+     'test1':
+        - task: start1_1
+          python: 'a.py'
+        - task: start1_2 
+          python: 'a.py'
+    
+  - task: middle 
+    python: 'a.py'
+    
+  - if var.th < 20:
+    - task: last 
+      python: 'a.py'
+  
+  - task: last
+    python: 'a.py'
+     
+     
