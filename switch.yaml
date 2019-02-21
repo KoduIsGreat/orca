@@ -20,6 +20,10 @@ job:
           python: 'a.py'
         - task: start1_2 
           python: 'a.py'
+     
+     default:
+        - task: default
+          python: 'a.py'
     
   - task: middle 
     python: 'a.py'
