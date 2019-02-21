@@ -350,18 +350,18 @@ class OrcaConfig(object):
             with open('inputs.json', 'w') as json_ifile:
                 json.dump(payload.to_python(), json_ifile, indent=2)
             with open('outputs.json', 'w') as json_ofile:
-                json.dump(service.to_python(), json_ofile, indent=2)
+                json.dump(task.to_python(), json_ofile, indent=2)
         elif fmt == 'yaml' or fmt == 'yml':
             with open('inputs.yml', 'w') as yml_ifile:
                 yaml.dump(payload.to_python(), yml_ifile, default_flow_style=False)
             with open('outputs.yml', 'w') as yml_ofile:
-                yaml.dump(service.to_python(), yml_ofile, default_flow_style=False)
+                yaml.dump(task.to_python(), yml_ofile, default_flow_style=False)
         elif fmt == 'csv':
             with open('inputs.csv', 'w') as csv_ifile:
                 df = DataFrame.from_dict(payload.to_python())
                 df.to_csv(csv_ifile)
             with open('outputs.csv', 'w') as csv_ofile:
-                df = DataFrame.from_dict(service.to_python())
+                df = DataFrame.from_dict(task.to_python())
                 df.to_csv(csv_ofile)
         else:
             raise OrcaConfigException("{0} format not yet supported".format(fmt))
