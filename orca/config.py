@@ -5,11 +5,15 @@ import sys
 import importlib
 import subprocess
 import requests
+import os
 
 from csip import Client
 from typing import List, Dict, TextIO
 from ruamel import yaml
 from concurrent.futures import ThreadPoolExecutor
+# from docker.errors import APIError, TLSParameterError
+# import docker
+from pandas import DataFrame
 from dotted.collection import DottedCollection, DottedDict
 
 
@@ -74,6 +78,7 @@ class Service(object):
     def __init__(self, url: str,):
         self.url = url
 
+
 # all payload data during processing. must be global!
 payload = DottedDict()
 task = DottedDict()
@@ -90,8 +95,33 @@ class OrcaConfig(object):
         self.deps = config.get('dependencies', [])
         self.vars = config.get('var', {})
         self.workflow = config['job']
+        self.resources = config.get('resources', {})
+        self.__resolve_resouces()
         self.__resolve_dependencies()
         self.__set_vars(self.vars, args if args is not None else [])
+
+    def __resolve_resouces(self):
+        pass
+        # client = docker.from_env()
+        # if 'registry' in self.resources:
+        #     try:
+        #         registry = self.resources.get('registry')
+        #         client.login(
+        #             username=registry,
+        #             password=os.environ['ORCA_DOCKER_REGISTRY_PASSWORD'],
+        #             registry=registry)
+        #     except (APIError, TLSParameterError) as e:
+        #         raise OrcaConfigException(e)
+        # self.__resolve_images()
+
+    # def __resolve_images(self):
+    #     client = docker.from_env()
+    #
+    #     containers = self.resources.get('containers')
+    #     image_tags = list(map(lambda c: c['image'], containers))
+    #     images = list(filter(lambda img: img.tags in image_tags, client.images.list()))
+    #     if len(image_tags) == len(images):
+    #         return images
 
     def __resolve_dependencies(self):
         for dep in self.deps:
@@ -314,16 +344,38 @@ class OrcaConfig(object):
             'vars': self.vars,
             'workflow': self.workflow
         }
+    def __output_data(self):
+        fmt = self.conf.get('outputFormat', 'json')
+        if fmt == 'json':
+            with open('inputs.json', 'w') as json_ifile:
+                json.dump(payload.to_python(), json_ifile, indent=2)
+            with open('outputs.json', 'w') as json_ofile:
+                json.dump(service.to_python(), json_ofile, indent=2)
+        elif fmt == 'yaml' or fmt == 'yml':
+            with open('inputs.yml', 'w') as yml_ifile:
+                yaml.dump(payload.to_python(), yml_ifile, default_flow_style=False)
+            with open('outputs.yml', 'w') as yml_ofile:
+                yaml.dump(service.to_python(), yml_ofile, default_flow_style=False)
+        elif fmt == 'csv':
+            with open('inputs.csv', 'w') as csv_ifile:
+                df = DataFrame.from_dict(payload.to_python())
+                df.to_csv(csv_ifile)
+            with open('outputs.csv', 'w') as csv_ofile:
+                df = DataFrame.from_dict(service.to_python())
+                df.to_csv(csv_ofile)
+        else:
+            raise OrcaConfigException("{0} format not yet supported".format(fmt))
 
     def execute(self) -> None:
         self.__handle_sequence(self.workflow)
+        self.__output_data()
         print(payload)
 
     def init(self) -> None:
         self.__init_sequence(self.workflow)
 
     def write_config(self, name: str, description: str, fmt: str ='yml'):
-        if fmt == 'yml':
+        if fmt == 'yml' or fmt == 'yaml':
             with open(name+'.yml', 'w') as yml_file:
                 yaml.dump(self.__create(name, description), yml_file, default_flow_style=False)
         elif fmt == 'json':

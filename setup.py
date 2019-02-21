@@ -14,6 +14,7 @@ setuptools.setup(
         "click == 7.0",
         "dotted == 0.1.8",
         "ruamel.yaml == 0.15.88",
+        "docker == 3.7.0"
     ],
     description="A cli tool for orchestrating model workflows",
     long_description=open('README.md').read(),
