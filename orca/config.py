@@ -99,7 +99,7 @@ class OrcaConfig(object):
         self.conf = config.get('conf', {})
         self.deps = config.get('dependencies', [])
         self.vars = config.get('var', {})
-        self.workflow = config['job']
+        self.job = config['job']
         self.resources = config.get('resources', {})
         self.__resolve_resouces()
         self.__resolve_dependencies()
@@ -199,7 +199,7 @@ class OrcaConfig(object):
                     raise OrcaConfigException(e)
             else:
                 raise OrcaConfigException('Invalid, Orca element to initalize')
-        self.workflow = new_sequence
+        self.job = new_sequence
         
         
 # Handler        
@@ -337,7 +337,7 @@ class OrcaConfig(object):
             'dependencies': self.deps,
             'conf': self.conf,
             'vars': self.vars,
-            'workflow': self.workflow
+            'workflow': self.job
         }
       
     #def __output_data(self):
@@ -363,12 +363,12 @@ class OrcaConfig(object):
             #raise OrcaConfigException("{0} format not yet supported".format(fmt))
 
     def execute(self) -> None:
-        self.__handle_sequence(self.workflow)
+        self.__handle_sequence(self.job)
         #self.__output_data()
         #print(payload)
 
     def init(self) -> None:
-        self.__init_sequence(self.workflow)
+        self.__init_sequence(self.job)
 
     def write_config(self, name: str, description: str, fmt: str ='yml'):
         if fmt == 'yml' or fmt == 'yaml':
