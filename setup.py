@@ -4,7 +4,7 @@ import orca
 setuptools.setup(
     name="orca",
     version=orca.__version__,
-    author="Adam Shelton",
+    author="Adam Shelton, Olaf David",
     author_email="",
     install_requires=[
         "requests == 2.21.0",
