@@ -2,7 +2,7 @@ import json
 import logging
 import re
 import sys
-import importlib
+#import importlib
 import subprocess
 import requests
 import os
@@ -29,6 +29,12 @@ service_dict = {
         'csip': 'http://localhost:8084/csip.temporal-aggregator/d/temporal/parameter/1.0'
     }
 }
+    
+CSIP   = 'csip'
+BASH   = 'bash'
+PYTHON = 'python'
+HTTP   = 'http'
+
 
 def process_config(file: TextIO) -> Dict:
     try:
@@ -56,10 +62,11 @@ def process_config(file: TextIO) -> Dict:
 
 def run(cmd, errmsg="unspecified error", env = {}, delimiter='\n', exit_on_err=True, wd=None):
     #print(cmd)
-    sp = subprocess.Popen(cmd, env=env, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=wd)
+    sp = subprocess.Popen(cmd, env=env, shell=True, 
+                          stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=wd)
     out, err = sp.communicate()
     if err:
-        for line in err.split('\n'):
+        for line in err.decode('utf-8').split(delimiter):
             print("ERROR: " + line)
     if sp.returncode != 0 and exit_on_err is True:
         print('ERROR: ' + str(sp.returncode) + " "   + errmsg)
@@ -67,10 +74,9 @@ def run(cmd, errmsg="unspecified error", env = {}, delimiter='\n', exit_on_err=T
         o = ""
         for line in out.decode('utf-8').split(delimiter):
              if line:
-                 o+=line + '\n'
+                 o += line + '\n'
         return o
     return None
-
 
 
 class Service(object):
@@ -80,7 +86,6 @@ class Service(object):
 
 
 # all payload data during processing. must be global!
-payload = DottedDict()
 task = DottedDict()
 var = DottedDict()
 
@@ -149,9 +154,9 @@ class OrcaConfig(object):
         """put all variables as globals"""
         print(vars)
         for key, val in vars.items():
+            if not key.isidentifier():
+                raise OrcaConfigException('Invalid variable name: "{0}"'.format(key))
             try:
-                if not key.isidentifier():
-                    raise OrcaConfigException('Invalid variable identifier: "{0}"'.format(key))
                 exec("var.{0}={1}".format(key,val))
                 print("var.{0} = {1} -> {2}".format(key, str(val), str(eval("var."+key))))
             except Exception as e:
@@ -161,20 +166,20 @@ class OrcaConfig(object):
         d = {k:v['value'] for k,v in client.data.items() }
         return d
 
-    def __build_csip_payload_step(self, name: str, task: Dict):
-        payload_data = self.__extract_csip_payload(Client().get_capabilities(task.get('csip')))
-        node_meta = 'payload ({0})'.format(name)
+    def __build_csip_payload_step(self, tsk_name: str, tsk: Dict):
+        payload_data = self.__extract_csip_payload(Client().get_capabilities(tsk.get(CSIP)))
+        node_meta = 'payload ({0})'.format(tsk_name)
         return {node_meta: payload_data}
 
-    def __build_task_step(self, name: str, task: Dict):
-        node_meta = 'task ({0})'.format(name)
-        return {node_meta: {'csip': task.get('csip')}}
+    def __build_task_step(self, tsk_name: str, tsk: Dict):
+        node_meta = 'task ({0})'.format(tsk_name)
+        return {node_meta: {CSIP: tsk.get(CSIP)}}
 
-    def __init_task(self, name: str, task: Dict) -> Dict:
-        if 'csip' in task:
+    def __init_task(self, tsk_name: str, tsk: Dict) -> Dict:
+        if CSIP in tsk:
             return {
-                'payload': self.__build_csip_payload_step(name, task),
-                'service': self.__build_task_step(name, task)
+                'payload': self.__build_csip_payload_step(tsk_name, tsk),
+                'task': self.__build_task_step(tsk_name, tsk)
             }
 
     def __init_sequence(self, sequence: Dict) -> None:
@@ -189,7 +194,7 @@ class OrcaConfig(object):
                 try:
                     payload_and_task = self.__init_task(meta, service_dict.get(meta))
                     new_sequence.append(payload_and_task.get('payload'))
-                    new_sequence.append(payload_and_task.get('service'))
+                    new_sequence.append(payload_and_task.get('task'))
                 except KeyError as e:
                     raise OrcaConfigException(e)
             else:
@@ -202,98 +207,88 @@ class OrcaConfig(object):
     def __handle_sequence(self, sequence: Dict) -> None:
         for step in sequence:
             node = next(iter(step))
-            #if node == "payload":
-                #self.__handle_payload(step[node], meta)
-            if node == "task":
+            if node == 'task':
                 print(" ---- task: '{}'".format(step['task']))
                 self.__handle_task(step, step['task'])
-            elif node.startswith("if "):
+            elif node.startswith('if '):
                 print(" ---- if: '{}'".format(node[3:]))
                 self.__handle_if(step[node], node[3:])
-            elif node.startswith("for "):
+            elif node.startswith('for '):
                 print(" ---- for: '{}'".format(node[4:]))
                 self.__handle_for(step[node], node[4:])
-            elif node == "fork":
+            elif node == 'fork':
                 print(" ---- fork: ")
                 self.__handle_fork(step[node])
-            elif node.startswith("switch "):
+            elif node.startswith('switch '):
                 print(" ---- switch: '{}'".format(node[7:]))
                 self.__handle_switch(step[node], node[7:])
             else:
-                raise OrcaConfigException('Invalid step in job: "{0}"'.format(node))
+                raise OrcaConfigException('Invalid element: "{0}"'.format(node))
         
-    #def __handle_payload(self, payload_:Dict, name:str) -> None:
-        #for key, value in payload_.items():
-            #print("  handle props: {0} -> {1}".format(key, str(value)))
-            #payload[name + "." + key] = self.__resolve(value)
+    #def __handle_requests_result(self, response, tsk_name: str) -> None:
+        #for k,v in response.content:
+            #print(" handling req result props: {0} -> {1}".format(k, str(v)))
+            #task[tsk_name + "." + k] = v
 
-    def __handle_csip_result(self, client: Client, name:str) ->None:
-        for k, v in client.data.items():
-            print(" handling result props: {0} -> {1}".format(k, str(v)))
-            task[name + "." + k] = v['value']
+    def __handle_csip_client(self, tsk: Dict, tsk_name: str, inputs: Dict) -> None:
+        url = self.__resolve(tsk[CSIP])
+        client = Client()
+        for key, value in inputs.items():
+            client.add_data(key, self.__resolve(value))
+            
+        print("  calling csip: " + url)
+        result = client.execute(url)
+        
+        for res_name in result.get_data_names():
+            if not res_name.isidentifier():
+                raise OrcaConfigException('Illegal output name: "{0}"'.format(res_name))
+            value = result.get_data_value(res_name)
+            print(" handling result props: {0} -> {1}".format(name, str(value)))
+            task[tsk_name + "." + res_name] = value
+              
+    #def __handle_requests_client(self, url: str, t: Dict, tsk_name: str) -> None:
+        #if 'method' not in t:
+            #raise OrcaConfigException("requests service operator must include method: service {0}".format(tsk_name))
+        #if t['method'] == 'GET':
+            #self.__handle_requests_result(requests.get(url, params=t['params']), tsk_name)
+        #elif t['method'] == 'POST':
+            #if isinstance(payload[tsk_name], DottedCollection):
+                #self.__handle_requests_result(requests.post(url, payload[tsk_name].to_python()), tsk_name)
+            #else:
+                #self.__handle_requests_result(requests.post(url,payload[tsk_name]), tsk_name)
 
-    def __handle_requests_result(self, response, name: str) -> None:
-        for k,v in response.content:
-            print(" handling req result props: {0} -> {1}".format(k, str(v)))
-            task[name + "." + k] = v
-
-    def __handle_csip_client(self, url: object, name: str) -> None:
-        try:
-            client = Client()
-            for key, value in payload[name].items():
-                if isinstance(value, DottedCollection):
-                    client.add_data(key, value.to_python())
-                else:
-                    client.add_data(key, value)
-            self.__handle_csip_result(client.execute(url), name)
-        except requests.exceptions.HTTPError as e:
-            raise OrcaConfigException(e)
-
-    def __handle_requests_client(self, url: str, task: Dict, name: str) -> None:
-        if 'method' not in task:
-            raise OrcaConfigException("requests service operator must include method: service {0}".format(name))
-        if task['method'] == 'GET':
-            self.__handle_requests_result(requests.get(url, params=task['params']), name)
-        elif task['method'] == 'POST':
-            if isinstance(payload[name], DottedCollection):
-                self.__handle_requests_result(requests.post(url, payload[name].to_python()), name)
-            else:
-                self.__handle_requests_result(requests.post(url,payload[name]), name)
-
-    def __handle_python_client(self, path: str, name: str) -> None:
+    def __handle_python_client(self, path: str, tsk_name: str) -> None:
         print("  exec python file : " + path)
         exec(open(path).read(), globals())
 
-    def __handle_bash_client(self, path: str, name: str, env: Dict) -> None:
+    def __handle_bash_client(self, path: str, tsk_name: str, env: Dict) -> None:
         out = run(path, env=env)
         print(out)
 
-    def __handle_task(self, task: Dict, name: str) -> None:
-        if not name.isidentifier():
-            raise OrcaConfigException('Invalid task name, must be identifier: "{0}"'.format(name))
+    def __handle_task(self, tsk: Dict, tsk_name: str) -> None:
+        if not tsk_name.isidentifier():
+            raise OrcaConfigException('Invalid task name, must be identifier: "{0}"'.format(tsk_name))
 
         inputs = {}
-        if 'inputs' in task:
-            inputs = self.__resolve_dict(task['inputs'])
+        if 'inputs' in tsk:
+            inputs = self.__resolve_dict(tsk['inputs'])
 
-        if 'python' in task:
-            _file = self.__resolve(task['python'])
+        if PYTHON in tsk:
+            _file = self.__resolve(tsk[PYTHON])
             print("  calling python: " + _file)
-            self.__handle_python_client(_file, name)
-        elif 'bash' in task:
-            _file = task['bash']
-            #_file = self.__resolve(task['bash'])
+            self.__handle_python_client(_file, tsk_name)
+        elif BASH in tsk:
+            _file = tsk[BASH]
+            #_file = self.__resolve(tsk[BASH])
             print("  calling bash: " + _file)
             env = self.__values_tostr(inputs)
-            self.__handle_bash_client(_file, name, env)
-        elif 'csip' in task:
-            # _url = self.__resolve(task['csip'])
-            # log.info("  calling remote csip: " + _url)
-            self.__handle_csip_client(task['csip'], name)
-        elif 'http' in task:
-            _url = self.__resolve(task['http'])
+            self.__handle_bash_client(_file, tsk_name, env)
+        elif CSIP in tsk:
+            self.__handle_csip_client(skt, tsk_name, inputs)
+        elif HTTP in tsk:
+            _url = self.__resolve(tsk[HTTP])
             log.info('calling remote url {0}', _url)
-            self.__handle_requests_client(_url, task, name)
+            self.__handle_requests_client(_url, tsk, tsk_name)
 
 # control structures
 
@@ -314,7 +309,7 @@ class OrcaConfig(object):
         """Handle Looping"""
         i = var_expr.find(",")
         if i == -1:
-            raise OrcaConfigException('Invalid for expression: "{0}"'.format(var_expr))
+            raise OrcaConfigException('Invalid "for" expression: "{0}"'.format(var_expr))
         var = var_expr[:i]
         if not var.isidentifier():
             raise OrcaConfigException('Not a valid identifier: "{0}"'.format(var))
@@ -325,13 +320,13 @@ class OrcaConfig(object):
 
     def __handle_fork(self, sequences:Dict) -> None:
         """Handle parallel execution"""
-        # get the sub workflows
-        #print(sequence)
-        with ThreadPoolExecutor(max_workers=(len(sequences))) as executor:
+        # print(sequence)
+        with ThreadPoolExecutor(max_workers=(len(sequences))) as e:
+            # get the sub sequences
             for sequence in sequences:
-                #print(workflows)
-                #self.__handle_sequence(workflows['workflow'])  # for testing as seq
-                executor.submit(self.__handle_sequence, sequence)
+                #print(sequence)
+                #self.__handle_sequence(sequence)  # for testing as seq
+                e.submit(self.__handle_sequence, sequence)
     
     def __create(self, name: str, description: str) -> Dict:
         return {
@@ -344,32 +339,33 @@ class OrcaConfig(object):
             'vars': self.vars,
             'workflow': self.workflow
         }
-    def __output_data(self):
-        fmt = self.conf.get('outputFormat', 'json')
-        if fmt == 'json':
-            with open('inputs.json', 'w') as json_ifile:
-                json.dump(payload.to_python(), json_ifile, indent=2)
-            with open('outputs.json', 'w') as json_ofile:
-                json.dump(task.to_python(), json_ofile, indent=2)
-        elif fmt == 'yaml' or fmt == 'yml':
-            with open('inputs.yml', 'w') as yml_ifile:
-                yaml.dump(payload.to_python(), yml_ifile, default_flow_style=False)
-            with open('outputs.yml', 'w') as yml_ofile:
-                yaml.dump(task.to_python(), yml_ofile, default_flow_style=False)
-        elif fmt == 'csv':
-            with open('inputs.csv', 'w') as csv_ifile:
-                df = DataFrame.from_dict(payload.to_python())
-                df.to_csv(csv_ifile)
-            with open('outputs.csv', 'w') as csv_ofile:
-                df = DataFrame.from_dict(task.to_python())
-                df.to_csv(csv_ofile)
-        else:
-            raise OrcaConfigException("{0} format not yet supported".format(fmt))
+      
+    #def __output_data(self):
+        #fmt = self.conf.get('outputFormat', 'json')
+        #if fmt == 'json':
+            #with open('inputs.json', 'w') as json_ifile:
+                #json.dump(payload.to_python(), json_ifile, indent=2)
+            #with open('outputs.json', 'w') as json_ofile:
+                #json.dump(t.to_python(), json_ofile, indent=2)
+        #elif fmt == 'yaml' or fmt == 'yml':
+            #with open('inputs.yml', 'w') as yml_ifile:
+                #yaml.dump(payload.to_python(), yml_ifile, default_flow_style=False)
+            #with open('outputs.yml', 'w') as yml_ofile:
+                #yaml.dump(t.to_python(), yml_ofile, default_flow_style=False)
+        #elif fmt == 'csv':
+            #with open('inputs.csv', 'w') as csv_ifile:
+                #df = DataFrame.from_dict(payload.to_python())
+                #df.to_csv(csv_ifile)
+            #with open('outputs.csv', 'w') as csv_ofile:
+                #df = DataFrame.from_dict(t.to_python())
+                #df.to_csv(csv_ofile)
+        #else:
+            #raise OrcaConfigException("{0} format not yet supported".format(fmt))
 
     def execute(self) -> None:
         self.__handle_sequence(self.workflow)
-        self.__output_data()
-        print(payload)
+        #self.__output_data()
+        #print(payload)
 
     def init(self) -> None:
         self.__init_sequence(self.workflow)
@@ -383,3 +379,4 @@ class OrcaConfig(object):
                 json.dump(self.__create(name, description), json_file, indent=2)
         else:
             raise OrcaConfigException('{0} is not a supported workflow format'.format(fmt))
+
