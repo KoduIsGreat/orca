@@ -1,0 +1,13 @@
+apiversion: orca/'1.0'
+
+version: '0.1'
+dependencies:
+  - os
+var:
+  cwd: os.getcwd()
+  afile: os.path.join(os.getcwd(), 'fixtures\tmp\a.py')
+job:
+  # python task
+  - task: mean
+    python: var.afile
+

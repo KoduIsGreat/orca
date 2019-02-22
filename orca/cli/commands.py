@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-from orca.config import process_config, OrcaConfig
+from orca.core.config import process_config, OrcaConfig
 import click
 import json
 
@@ -9,20 +9,6 @@ import json
 def orca():
     pass
 
-@orca.command()
-@click.argument('file', type=click.File('r'))
-@click.argument('name', type=click.STRING)
-@click.argument('description', type=click.STRING)
-@click.option('--format', type=click.Choice(['json', 'yml', 'yaml'],))
-def init(file, name, description, format):
-    """
-    Initialize a workflow from a services file
-    """
-    format = 'yml' if format is None else format
-    config = process_config(file)
-    orca_config = OrcaConfig(config)
-    orca_config.init()
-    orca_config.write_config(name, description, format)
 
 @orca.command()
 @click.option('-v', '--verbose', is_flag=True)
@@ -36,14 +22,4 @@ def run(file, verbose, args):
     print('process run ' + json.dumps(conf, indent=2))
     config = OrcaConfig(conf, args)
     config.execute()
-
-
-# @orca.command()
-# @click.group()
-# def service():
-#     pass
-#
-# @service.command()
-# def ls():
-#     pass
 

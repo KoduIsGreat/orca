@@ -1,3 +1,0 @@
-workflow:
-  - service (csip.nwm):
-  - service (csip.temporal-aggregator):

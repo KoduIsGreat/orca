@@ -23,4 +23,4 @@ demo:
 	python3 orca run -v comprehensive_example.yaml arg1 test 300
 
 run:
-	python3 orca run -v $(file) 
+	python3 orca run -v $(file)

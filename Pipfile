@@ -4,16 +4,12 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-argparse = "*"
-pyyaml = "==4.2b1"
 requests = "*"
 csip = "*"
 jsonschema = "*"
 click = "*"
 dotted = "*"
-bs4 = "*"
-docker = "*"
-pandas = "*"
+"ruamel.yaml" = "*"
 
 [dev-packages]
 setuptools = "*"

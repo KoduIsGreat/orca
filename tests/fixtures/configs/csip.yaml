@@ -1,0 +1,23 @@
+apiversion: orca/'1.0'
+
+version: '0.1'
+var:
+
+job:
+  - task: hydraulics
+    csip: http://csip.engr.colostate.edu:8088/csip-hydraulics/m/hydraulics/channelgeometry/1.0
+    inputs:
+      depthType: user
+      depth: 5
+      crossSection: "x\ty\n0\t3250\n10\t3240\n41.4\t3242\n52.3\t3243\n61.8\t3248\n72\t3241\n84\t3239\n87\t3242\n95\t3248\n123\t3252"
+      irregularGeometry : false
+      bottomWidth: 6.096
+      sideSlope: 2
+      discharge: 11.3267
+      bedSlope: 0.0016
+      manningRoughness: 0.025
+    outputs:
+      - topWidth
+      - hydraulicRadius
+      - hydraulicDepth
+      - ts

@@ -1,0 +1,16 @@
+apiversion: orca/'1.0'
+
+version: '0.1'
+
+var:
+  dir: '/tmp'
+
+job:
+  # bash inline task
+  - task: echo
+    bash: |
+        echo "hello world"
+        echo "done."
+
+    inputs:
+      DIR: var.dir
