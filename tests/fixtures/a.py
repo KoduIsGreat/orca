@@ -2,6 +2,6 @@ import time
 
 print("a.py exec")
 
-time.sleep(3)
+time.sleep(0.1)
 
 c = 20
