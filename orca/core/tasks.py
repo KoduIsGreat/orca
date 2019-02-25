@@ -1,7 +1,7 @@
 import logging
 from typing import Dict, List
 from csip import Client
-from dotted.collection import DottedCollection, DottedDict
+from dotted.collection import DottedCollection
 import requests
 import subprocess
 import os
@@ -56,16 +56,6 @@ class OrcaTask(object):
         return self.task_data.get('python')
 
 
-def resolve(value: object) -> object:
-    """resolve the value against the globals"""
-    return eval(str(value))
-
-
-def resolve_dict(d: Dict) -> Dict:
-    resolved = {key: resolve(value) for key, value in d.items()}
-    return resolved
-
-
 def values_tostr(d: Dict) -> Dict:
     a = {key: str(value) for key, value in d.items()}
     return a
@@ -85,6 +75,7 @@ def handle_csip_result(response: Dict, outputs: List, name: str) -> Dict:
     for k,v in response.items():
         if k in outputs:
             d[name + "." + k] = v['value']
+    return d
 
 
 def handle_python_result(outputs: List, name: str)-> Dict:
@@ -95,7 +86,7 @@ def handle_python_result(outputs: List, name: str)-> Dict:
     return d
 
 
-def handle_csip(task: OrcaTask, var: DottedDict) -> Dict:
+def handle_csip(task: OrcaTask) -> Dict:
     try:
         url = task.csip
         name = task.name
@@ -104,6 +95,7 @@ def handle_csip(task: OrcaTask, var: DottedDict) -> Dict:
         for key, value in task.inputs.items():
             if isinstance(value, DottedCollection):
                 client.add_data(key, value.to_python())
+
             else:
                 client.add_data(key, value)
         client = client.execute(url)
@@ -112,7 +104,7 @@ def handle_csip(task: OrcaTask, var: DottedDict) -> Dict:
         raise OrcaTaskException(e)
 
 
-def handle_http(task: OrcaTask, var: DottedDict) -> Dict:
+def handle_http(task: OrcaTask) -> Dict:
     url = task.http
     name = task.name
     inputs = task.inputs
@@ -127,7 +119,7 @@ def handle_http(task: OrcaTask, var: DottedDict) -> Dict:
             return handle_service_result(requests.post(url, inputs).content, name)
 
 
-def handle_bash(task: OrcaTask, var: DottedDict):
+def handle_bash(task: OrcaTask):
     env = {}
     cmd = task.bash
     config = task.config
@@ -155,21 +147,17 @@ def handle_bash(task: OrcaTask, var: DottedDict):
     return {}
 
 
-def handle_python(task: OrcaTask, var: DottedDict):
+def handle_python(task: OrcaTask):
     print("  exec python file : " + task.python)
     for k, v in task.inputs.items():
+        if isinstance(v, str):
+            v = "\'{0}\'".format(v)
         fmt = '{0} = {1}'.format(k, v)
         exec(fmt, locals(), globals())
 
-    python_file = ''
-    if task.python.startswith('var.'):
-        python_file = eval(task.python, locals())
+    if os.path.isfile(task.python):
+        exec(open(task.python).read(), globals())
     else:
-        python_file = task.python
-
-    if os.path.isfile(python_file):
-        exec(open(python_file).read(), globals())
-    else:
-        exec(python_file, globals())
+        exec(task.python, globals())
     return handle_python_result(task.outputs, task.name)
 

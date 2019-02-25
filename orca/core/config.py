@@ -4,7 +4,7 @@ import re
 from typing import List, Dict, TextIO
 from ruamel import yaml
 from concurrent.futures import ThreadPoolExecutor
-from dotted.collection import  DottedDict
+from dotted.collection import DottedDict
 from orca.core.tasks import OrcaTask, handle_http, handle_csip, handle_bash, handle_python
 log = logging.getLogger(__name__)
 
@@ -100,18 +100,25 @@ class OrcaConfig(object):
             return handle_python
 
     def __resolve_task_inputs(self, task_dict: Dict) -> Dict:
-        inputs = task_dict.get('inputs', {})
+
+        inputs = task_dict.get('inputs',{})
         if inputs is not {}:
             for k, v in inputs.items():
-                if str(v).startswith('task.'):
+                if str(v).startswith('task.') or str(v).startswith('var.'):
                     inputs[k] = eval(str(v), globals())
         return task_dict
 
+    def __resolve_task(self, task_dict: Dict) -> Dict:
+        for k, v in task_dict.items():
+            if str(v).startswith('var.'):
+                task_dict[k] = eval(str(v), globals())
+        return self.__resolve_task_inputs(task_dict)
+
     def __handle_task(self, task_dict: Dict) -> None:
         handle = self.__select_handler(task_dict)
-        resolved_dict = self.__resolve_task_inputs(task_dict)
-        _task = OrcaTask(resolved_dict)
-        result = handle(_task, var)
+        resolved_task = self.__resolve_task(task_dict.copy())
+        _task = OrcaTask(resolved_task)
+        result = handle(_task)
         if isinstance(result, dict):
             for k, v in result.items():
                 task[k] = v

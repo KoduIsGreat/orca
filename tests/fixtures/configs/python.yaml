@@ -5,6 +5,7 @@ dependencies:
   - os
 var:
   afile: os.path.join(os.getcwd(), "fixtures", "a.py")
+  d: 20
 job:
   # python task
   - task: test
@@ -20,9 +21,10 @@ job:
 
   - task: test3
     python: |
-      a =  i1 + i2
+      a =  i1 + i2 + i3
     inputs:
       i1: task.test.c
       i2: task.test2.c
+      i3: var.d
     outputs:
       - a
