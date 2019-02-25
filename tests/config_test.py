@@ -5,11 +5,13 @@ import os
 
 fixture_path = os.path.dirname(__file__)
 
+
 def run_workflow(file_name: str):
     path = os.path.join(fixture_path, 'fixtures', 'configs', file_name)
     yaml = process_config(open(path, 'r'))
     config = OrcaConfig(yaml)
     config.execute()
+
 
 class OrcaConfigTest(unittest.TestCase):
 
