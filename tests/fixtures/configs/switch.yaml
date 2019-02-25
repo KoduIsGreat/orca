@@ -1,38 +1,39 @@
 apiversion: orca/'1.0'
 
 version: '0.1'
-
+dependencies:
+  - os
 var:
-  select: args[0]
+  afile: os.path.join(os.getcwd(), "fixtures", "a.py")
+  select: 'test5'
   th: 12
-  
 job:
   - switch var.select:
   
      'test5':
         - task: start5_1 
-          python: 'a.py'
+          python: var.afile
         - task: start5_2 
-          python: 'a.py'
+          python: var.afile
 
      'test1':
         - task: start1_1
-          python: 'a.py'
+          python: var.afile
         - task: start1_2 
-          python: 'a.py'
+          python: var.afile
      
      default:
         - task: default
-          python: 'a.py'
+          python: var.afile
     
   - task: middle 
-    python: 'a.py'
+    python: var.afile
     
   - if var.th < 20:
     - task: last 
-      python: 'a.py'
+      python: var.afile
   
   - task: last
-    python: 'a.py'
+    python: var.afile
      
      

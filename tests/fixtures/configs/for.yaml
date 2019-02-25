@@ -5,32 +5,33 @@ version: '0.1.1'
 schedule: 00 09-18 * * 1-5
 
 dependencies: 
-  - pandas
+  - os
   
 var:
-  file: 'testtt'
   counter: 5
-  b: var.file + 'lsls'
+  greetTo: 'Adam'
   
 job:
   - for v, range(1, var.counter):
     - task: example
-      bash: |
-            echo "called $FILE $IDX" 
-            date
+      python: |
+            excitement_level = ''
+            for i in range(1, excited):
+                excitement_level += '!'
+            print('Hello {0}{1}'.format(name, excitement_level))
       inputs:
-        FILE: var.file
-        IDX: v
+        excited: var.counter
+        name: var.greetTo
         
-  - for d, pandas.date_range(start='1/1/2018', end='1/08/2018', freq='D'):
-    - task: start2
-      bash: | 
-            echo "Running the forecast at '$DATE'"
-            echo "..."
-            sleep 1
-            
-      inputs:
-        DATE: d
+#  - for d, pandas.date_range(start='1/1/2018', end='1/08/2018', freq='D'):
+#    - task: start2
+#      bash: |
+#            echo "Running the forecast at '$DATE'"
+#            echo "..."
+#            sleep 1
+#
+#      inputs:
+#        DATE: d
         
   - task: last 
     python: 'a.py'

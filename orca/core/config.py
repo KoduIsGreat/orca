@@ -99,13 +99,22 @@ class OrcaConfig(object):
         elif 'python' in task_dict:
             return handle_python
 
+    def __resolve_task_inputs(self, task_dict: Dict) -> Dict:
+        inputs = task_dict.get('inputs', {})
+        if inputs is not {}:
+            for k, v in inputs.items():
+                if str(v).startswith('task.'):
+                    inputs[k] = eval(str(v), globals())
+        return task_dict
+
     def __handle_task(self, task_dict: Dict) -> None:
         handle = self.__select_handler(task_dict)
-        _task = OrcaTask(task_dict)
-        result = handle(_task)
+        resolved_dict = self.__resolve_task_inputs(task_dict)
+        _task = OrcaTask(resolved_dict)
+        result = handle(_task, var)
         if isinstance(result, dict):
             for k, v in result.items():
-                task[k] = v['value']
+                task[k] = v
         elif isinstance(result, str):
             print(result)
 

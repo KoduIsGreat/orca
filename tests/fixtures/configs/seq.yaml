@@ -32,9 +32,9 @@ job:
   - task: reformat 
     bash: reformat.sh
     inputs:
-      FORMAT='CSV'
-      FILE=var.file
-      TARGET='/tmp'
+      - FORMAT='CSV'
+      - FILE=var.file
+      - TARGET='/tmp'
       
       
   # bash inline task

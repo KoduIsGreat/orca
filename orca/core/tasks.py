@@ -1,9 +1,10 @@
 import logging
 from typing import Dict, List
 from csip import Client
-from dotted.collection import DottedCollection
+from dotted.collection import DottedCollection, DottedDict
 import requests
 import subprocess
+import os
 log = logging.getLogger(__name__)
 
 
@@ -79,7 +80,22 @@ def handle_service_result(response: Dict, outputs, name: str) -> Dict:
     return d
 
 
-def handle_csip(task: OrcaTask) -> Dict:
+def handle_csip_result(response: Dict, outputs: List, name: str) -> Dict:
+    d = dict()
+    for k,v in response.items():
+        if k in outputs:
+            d[name + "." + k] = v['value']
+
+
+def handle_python_result(outputs: List, name: str)-> Dict:
+    d = dict()
+    for v in outputs:
+        d[name + '.' + v] = eval(v, globals())
+
+    return d
+
+
+def handle_csip(task: OrcaTask, var: DottedDict) -> Dict:
     try:
         url = task.csip
         name = task.name
@@ -91,12 +107,12 @@ def handle_csip(task: OrcaTask) -> Dict:
             else:
                 client.add_data(key, value)
         client = client.execute(url)
-        return handle_service_result(client.data, outputs, name)
+        return handle_csip_result(client.data, outputs, name)
     except requests.exceptions.HTTPError as e:
         raise OrcaTaskException(e)
 
 
-def handle_http(task: OrcaTask) -> Dict:
+def handle_http(task: OrcaTask, var: DottedDict) -> Dict:
     url = task.http
     name = task.name
     inputs = task.inputs
@@ -111,7 +127,7 @@ def handle_http(task: OrcaTask) -> Dict:
             return handle_service_result(requests.post(url, inputs).content, name)
 
 
-def handle_bash( task: OrcaTask):
+def handle_bash(task: OrcaTask, var: DottedDict):
     env = {}
     cmd = task.bash
     config = task.config
@@ -139,8 +155,21 @@ def handle_bash( task: OrcaTask):
     return {}
 
 
-def handle_python(task: OrcaTask):
+def handle_python(task: OrcaTask, var: DottedDict):
     print("  exec python file : " + task.python)
-    exec(open(task.python).read(), globals())
-    return {}
+    for k, v in task.inputs.items():
+        fmt = '{0} = {1}'.format(k, v)
+        exec(fmt, locals(), globals())
+
+    python_file = ''
+    if task.python.startswith('var.'):
+        python_file = eval(task.python, locals())
+    else:
+        python_file = task.python
+
+    if os.path.isfile(python_file):
+        exec(open(python_file).read(), globals())
+    else:
+        exec(python_file, globals())
+    return handle_python_result(task.outputs, task.name)
 

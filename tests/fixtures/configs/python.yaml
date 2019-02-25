@@ -4,10 +4,25 @@ version: '0.1'
 dependencies:
   - os
 var:
-  cwd: os.getcwd()
-  afile: os.path.join(os.getcwd(), 'fixtures\tmp\a.py')
+  afile: os.path.join(os.getcwd(), "fixtures", "a.py")
 job:
   # python task
-  - task: mean
+  - task: test
     python: var.afile
+    outputs:
+      - c
 
+## test
+  - task: test2
+    python: var.afile
+    outputs:
+      - c
+
+  - task: test3
+    python: |
+      a =  i1 + i2
+    inputs:
+      i1: task.test.c
+      i2: task.test2.c
+    outputs:
+      - a
