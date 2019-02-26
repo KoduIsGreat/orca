@@ -43,7 +43,7 @@ def handle_python_result(outputs: List, name: str)-> Dict:
 
 ####
 
-class Handler(object):
+class OrcaHandler(object):
     """ Base orca handler class for control flow, variable resolution"""
   
     def handle(self, config: 'OrcaConfig') -> None:
@@ -160,7 +160,7 @@ class Handler(object):
 
 ####
 
-class ExecutionHandler(Handler):
+class ExecutionHandler(OrcaHandler):
     """Execution Handler, executes csip, bash, python, http"""
 
     def handle_csip(self, task: OrcaTask, yaml_dir: str) -> Dict:

@@ -45,11 +45,13 @@ class OrcaConfigException(Exception):
 class OrcaConfig(object):
   
     def __init__(self, config: Dict, file: str = None, args: List[str] = None):
+        ## the yaml file (if used)
         self.file = file
         self.conf = config.get('conf', {})
         self.deps = config.get('dependencies', [])
         self.var = config.get('var', {})
         self.job = config['job']
+        
         self.__resolve_dependencies()
         self.__set_vars({} if self.var is None else self.var, args if args is not None else [])
         
