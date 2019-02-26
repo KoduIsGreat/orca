@@ -135,6 +135,10 @@ class OrcaConfig(object):
         """Handle conditional switch."""
         c = eval(cond, globals())
         #print(sequence)
+        seq = sequence.get(c, sequence.get("default", None))
+        if seq is not None:
+            self.__handle_sequence(seq)
+ 
         for case, seq in sequence.items():
             if c == case:
                 self.__handle_sequence(seq)
@@ -152,15 +156,14 @@ class OrcaConfig(object):
             exec("{0}='{1}'".format(var,i), globals())
             self.__handle_sequence(sequence)
 
-    def __handle_fork(self, sequence:Dict) -> None:
+    def __handle_fork(self, sequences:Dict) -> None:
         """Handle parallel execution"""
-        # get the sub workflows
         #print(sequence)
-        with ThreadPoolExecutor(max_workers=(len(sequence)+1)) as executor:
-            for workflows in sequence:
+        with ThreadPoolExecutor(max_workers=(len(sequences))) as executor:
+            for sequence in sequences:
                 #print(workflows)
                 #self.__handle_sequence(workflows['workflow'])  # for testing as seq
-                executor.submit(self.__handle_sequence, workflows)
+                executor.submit(self.__handle_sequence, sequence)
 
     def __create(self, name: str, description: str) -> Dict:
         return {
