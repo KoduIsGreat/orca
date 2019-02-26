@@ -201,19 +201,16 @@ class ExecutionHandler(Handler):
         config = task.config
         # get defaults
         delimiter = config.get('delimiter', '\n')
-        errmsg = config.get('errmsg', "unspecified error")
-        exit_on_err = config.get("exitOnError", True)
         wd = config.get('wd', None)
-        
         if len(task.inputs) > 0:
             env = values_tostr(task.inputs)
         sp = subprocess.Popen(cmd, env=env, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=wd)
         out, err = sp.communicate()
+        if sp.returncode != 0:
+            print('code: ' + str(sp.returncode))
         if err:
             for line in err.decode('utf-8').split(delimiter):
                 print("ERROR: " + line)
-        if sp.returncode != 0 and exit_on_err is True:
-            print('ERROR: ' + str(sp.returncode) + " " + errmsg)
         if out:
             o = ""
             for line in out.decode('utf-8').split(delimiter):
@@ -221,7 +218,6 @@ class ExecutionHandler(Handler):
                     o += line + '\n'
             return o
         return {}
-
 
     def handle_python(self, task: OrcaTask, yaml_dir: str):
         print("  exec python file : " + task.python)
