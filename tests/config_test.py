@@ -1,6 +1,8 @@
 import unittest
 from orca.core.config import process_config
 from orca.core.config import OrcaConfig
+from orca.core.handler import ExecutionHandler
+
 import os
 
 fixture_path = os.path.dirname(__file__)
@@ -10,7 +12,8 @@ def run_workflow(file_name: str):
     path = os.path.join(fixture_path, 'fixtures', 'configs', file_name)
     yaml = process_config(open(path, 'r'))
     config = OrcaConfig(yaml, path)
-    config.execute()
+    handler = ExecutionHandler()
+    handler.handle(config)
 
 
 class OrcaConfigTest(unittest.TestCase):
