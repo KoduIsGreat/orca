@@ -134,14 +134,9 @@ class OrcaConfig(object):
     def __handle_switch(self, sequence:Dict, cond:str) -> None:
         """Handle conditional switch."""
         c = eval(cond, globals())
-        #print(sequence)
         seq = sequence.get(c, sequence.get("default", None))
         if seq is not None:
-            self.__handle_sequence(seq)
- 
-        for case, seq in sequence.items():
-            if c == case:
-                self.__handle_sequence(seq)
+            self.__handle_sequence(seq) 
 
     def __handle_for(self, sequence:Dict, var_expr:str) -> None:
         """Handle Looping"""
@@ -162,7 +157,7 @@ class OrcaConfig(object):
         with ThreadPoolExecutor(max_workers=(len(sequences))) as executor:
             for sequence in sequences:
                 #print(workflows)
-                #self.__handle_sequence(workflows['workflow'])  # for testing as seq
+                #self.__handle_sequence(sequence)  # for testing as seq
                 executor.submit(self.__handle_sequence, sequence)
 
     def __create(self, name: str, description: str) -> Dict:
