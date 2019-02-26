@@ -5,6 +5,7 @@ from dotted.collection import DottedCollection
 import requests
 import subprocess
 import os
+
 log = logging.getLogger(__name__)
 
 
@@ -86,7 +87,7 @@ def handle_python_result(outputs: List, name: str)-> Dict:
     return d
 
 
-def handle_csip(task: OrcaTask) -> Dict:
+def handle_csip(task: OrcaTask, yaml_dir: str) -> Dict:
     try:
         url = task.csip
         name = task.name
@@ -104,7 +105,7 @@ def handle_csip(task: OrcaTask) -> Dict:
         raise OrcaTaskException(e)
 
 
-def handle_http(task: OrcaTask) -> Dict:
+def handle_http(task: OrcaTask, yaml_dir: str) -> Dict:
     url = task.http
     name = task.name
     inputs = task.inputs
@@ -119,7 +120,7 @@ def handle_http(task: OrcaTask) -> Dict:
             return handle_service_result(requests.post(url, inputs).content, name)
 
 
-def handle_bash(task: OrcaTask):
+def handle_bash(task: OrcaTask, yaml_dir: str):
     env = {}
     cmd = task.bash
     config = task.config
@@ -147,7 +148,7 @@ def handle_bash(task: OrcaTask):
     return {}
 
 
-def handle_python(task: OrcaTask):
+def handle_python(task: OrcaTask, yaml_dir: str):
     print("  exec python file : " + task.python)
     for k, v in task.inputs.items():
         if isinstance(v, str):
@@ -155,9 +156,16 @@ def handle_python(task: OrcaTask):
         fmt = '{0} = {1}'.format(k, v)
         exec(fmt, locals(), globals())
 
-    if os.path.isfile(task.python):
+    if os.path.isabs(task.python) and os.path.isfile(task.python):
+        # absolute path provided
         exec(open(task.python).read(), globals())
     else:
-        exec(task.python, globals())
+        if not os.path.isabs(task.python) and os.path.isfile(os.path.join(yaml_dir, task.python)):
+            # path relative to yaml file
+            exec(open(os.path.join(yaml_dir, task.python)).read(), globals())
+        else: 
+            # python inlined
+            exec(task.python, globals())
+        
     return handle_python_result(task.outputs, task.name)
 

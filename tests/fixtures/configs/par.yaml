@@ -5,7 +5,7 @@ version: '0.1'
 dependencies:
   - os
 var:
-  afile: os.path.join(os.getcwd(), "fixtures", "a.py")
+  afile: 'a.py'
 
 job:
   - fork:

@@ -4,7 +4,7 @@ version: '0.1'
 dependencies:
   - os
 var:
-  afile: os.path.join(os.getcwd(), "fixtures", "a.py")
+  afile: 'a.py'
   select: 'test5'
   th: 12
 job:

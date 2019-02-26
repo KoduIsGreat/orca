@@ -1,6 +1,7 @@
 import json
 import logging
 import re
+import os
 from typing import List, Dict, TextIO
 from ruamel import yaml
 from concurrent.futures import ThreadPoolExecutor
@@ -11,7 +12,6 @@ log = logging.getLogger(__name__)
 # all payload data during processing. must be global!
 task = DottedDict()
 var = DottedDict()
-
 
 def process_config(file: TextIO) -> Dict:
     try:
@@ -40,14 +40,18 @@ class OrcaConfigException(Exception):
 
 
 class OrcaConfig(object):
-
-    def __init__(self, config: Dict, args: List[str] = None):
+    
+    def __init__(self, config: Dict, file: str = None, args: List[str] = None):
+        self.file = file
         self.conf = config.get('conf', {})
         self.deps = config.get('dependencies', [])
         self.var = config.get('var', {})
         self.workflow = config['job']
         self.__resolve_dependencies()
         self.__set_vars({} if self.var is None else self.var, args if args is not None else [])
+        
+    def __get_yaml_dir(self) -> str:
+        return os.path.dirname(self.file) if self.file is not None else "."
 
     def __resolve_dependencies(self):
         for dep in self.deps:
@@ -98,9 +102,11 @@ class OrcaConfig(object):
             return handle_bash
         elif 'python' in task_dict:
             return handle_python
+        else:
+            raise OrcaConfigException('Invalid task type: "{0}"'.format(task_dict))
+            
 
     def __resolve_task_inputs(self, task_dict: Dict) -> Dict:
-
         inputs = task_dict.get('inputs',{})
         if inputs is not {}:
             for k, v in inputs.items():
@@ -118,7 +124,7 @@ class OrcaConfig(object):
         handle = self.__select_handler(task_dict)
         resolved_task = self.__resolve_task(task_dict.copy())
         _task = OrcaTask(resolved_task)
-        result = handle(_task)
+        result = handle(_task, self.__get_yaml_dir())
         if isinstance(result, dict):
             for k, v in result.items():
                 task[k] = v
@@ -134,9 +140,10 @@ class OrcaConfig(object):
     def __handle_switch(self, sequence:Dict, cond:str) -> None:
         """Handle conditional switch."""
         c = eval(cond, globals())
-        seq = sequence.get(c, sequence.get("default", None))
-        if seq is not None:
-            self.__handle_sequence(seq) 
+        seq = sequence.get(c, sequence.get("default", None))
+        if seq is not None:
+            self.__handle_sequence(seq)
+ 
 
     def __handle_for(self, sequence:Dict, var_expr:str) -> None:
         """Handle Looping"""

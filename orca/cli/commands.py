@@ -20,6 +20,6 @@ def run(file, verbose, args):
     """
     conf = process_config(file)
     print('process run ' + json.dumps(conf, indent=2))
-    config = OrcaConfig(conf, args)
+    config = OrcaConfig(conf, file.name, args)
     config.execute()
 

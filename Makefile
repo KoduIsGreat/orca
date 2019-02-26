@@ -24,3 +24,6 @@ demo:
 
 run:
 	python3 orca run -v $(file)
+	
+test:
+	python3 -m unittest tests/*_test.py
