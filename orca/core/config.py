@@ -170,8 +170,8 @@ class OrcaConfig(object):
             'version': '0.1',
             'dependencies': self.deps,
             'conf': self.conf,
-            'vars': self.var,
-            'workflow': self.job
+            'var': self.var,
+            'job': self.job
         }
 
     def execute(self) -> None:
