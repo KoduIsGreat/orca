@@ -13,36 +13,41 @@ log = logging.getLogger(__name__)
 task = DottedDict()
 var = DottedDict()
 
-CSIP='csip'
-TASK='task'
-
-def process_config(file: TextIO) -> Dict:
-    try:
-        data = file.read()
-        print(data)
-        
-        # first pass: start with a valid the yaml file.
-        yaml.load(data)
-        
-        # processing single quote string literals: " ' '
-        repl = r"^(?P<key>\s*[^#:]*):\s+(?P<value>['].*['])\s*$"
-        fixed_data = re.sub(repl, '\g<key>: "\g<value>"', data, flags=re.MULTILINE)
-        print(fixed_data)
-        
-        # second pass: do it.
-        config = yaml.load(fixed_data)
-
-        return config
-    except yaml.YAMLError as e:
-        log.error(e)
-        raise OrcaConfigException("error loading yaml file.")
-
 
 class OrcaConfigException(Exception):
     pass
 
 
 class OrcaConfig(object):
+    """ Orca configuration class"""
+  
+    @staticmethod
+    def __process_config(file: TextIO) -> Dict:
+      try:
+          data = file.read()
+          print(data)
+          
+          # first pass: start with a valid the yaml file.
+          yaml.load(data)
+          
+          # processing single quote string literals: " ' '
+          repl = r"^(?P<key>\s*[^#:]*):\s+(?P<value>['].*['])\s*$"
+          fixed_data = re.sub(repl, '\g<key>: "\g<value>"', data, flags=re.MULTILINE)
+          print(fixed_data)
+          
+          # second pass: do it.
+          config = yaml.load(fixed_data)
+
+          return config
+      except yaml.YAMLError as e:
+          log.error(e)
+          raise OrcaConfigException("error loading yaml file.")
+  
+    @staticmethod
+    def create(file: TextIO, args: List[str] = None) -> 'OrcaConfig' :
+      d = OrcaConfig.__process_config(file)
+      return OrcaConfig(d, file.name, args)
+      
   
     def __init__(self, config: Dict, file: str = None, args: List[str] = None):
         ## the yaml file (if used)
