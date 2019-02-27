@@ -1,6 +1,8 @@
 #!/usr/bin/python3
 
-from orca.core.config import process_config, OrcaConfig
+from orca.core.config import OrcaConfig
+from orca.core.handler import ExecutionHandler
+from orca.core.handler import ValidationHandler
 import click
 import json
 
@@ -16,9 +18,22 @@ def orca():
 @click.argument('args', nargs=-1)
 def run(file, verbose, args):
     """
-    Run a workflow.
+    Run an orca job.
     """
     config = OrcaConfig.create(file, args)
-    handler = ExecutionHandler()
+    executor = ExecutionHandler()
 
-    handler.execute(config)
+    executor.handle(config)
+
+@orca.command()
+@click.option('-v', '--verbose', is_flag=True)
+@click.argument('file', type=click.File('r'))
+@click.argument('args', nargs=-1)
+def validate(file, verbose, args):
+    """
+    Validate an orca job.
+    """
+    config = OrcaConfig.create(file, args)
+    validator = ValidationHandler()
+
+    validator.handle(config)

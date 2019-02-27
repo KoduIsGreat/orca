@@ -2,6 +2,7 @@ import os
 import sys
 import requests
 import subprocess
+import requests
 
 from csip import Client
 from typing import List, Dict, TextIO
@@ -115,21 +116,23 @@ class OrcaHandler(metaclass=ABCMeta):
                 task_dict[k] = eval(str(v), globals())
         return self.__resolve_task_inputs(task_dict)
       
-    def resolve_file_path(self, name: str) -> str:
+    def _resolve_file_path(self, name: str, ext:str) -> str:
         """ resolve the full qualified path name"""
-        # maybe change this, because of testing
-        if hasattr(self, 'config'):
-            yaml_dir = self.config.get_yaml_dir()
-        else:
-            yaml_dir = "."
         if os.path.isfile(name):
             return name
         else:
+            # maybe change this, because of testing
+            if hasattr(self, 'config'):
+                yaml_dir = self.config.get_yaml_dir()
+            else:
+                yaml_dir = "."
             rel_path = os.path.join(yaml_dir, name)
             if os.path.isfile(rel_path):
                 # path relative to yaml file
                 return rel_path
-            else: 
+            else:
+                if name.endswith(ext):
+                    raise OrcaConfigException('File not found: "{0}"'.format(name))
                 return None
 
     def __handle_task(self, task_dict: Dict) -> None:
@@ -184,7 +187,7 @@ class OrcaHandler(metaclass=ABCMeta):
 class ExecutionHandler(OrcaHandler):
     """Execution Handler, executes csip, bash, python, http"""
 
-    def handle_csip(self, task: OrcaTask) -> Dict:
+    def handle_csip(self, task: OrcaTask) -> None:
         try:
             url = task.csip
             name = task.name
@@ -201,12 +204,12 @@ class ExecutionHandler(OrcaHandler):
             raise OrcaTaskException(e)
           
           
-    def handle_http(self, task: OrcaTask) -> Dict:
+    def handle_http(self, task: OrcaTask) -> None:
         url = task.http
         name = task.name
         inputs = task.inputs
         if 'method' not in task.config:
-            raise OrcaTaskException("requests service operator must include method: service {0}".format(name))
+            raise OrcaConfigException("requests service operator must include method: service {0}".format(name))
         if task.config['method'] == 'GET':
             return handle_service_result(requests.get(url, params=task.config['params']).content, name)
         elif task.config['method'] == 'POST':
@@ -216,7 +219,7 @@ class ExecutionHandler(OrcaHandler):
                 return handle_service_result(requests.post(url, inputs).content, name)
 
 
-    def handle_bash(self, task: OrcaTask):
+    def handle_bash(self, task: OrcaTask) -> None:
         env = {}
         cmd = task.bash
         config = task.config
@@ -241,7 +244,7 @@ class ExecutionHandler(OrcaHandler):
         return {}
 
 
-    def handle_python(self, task: OrcaTask):
+    def handle_python(self, task: OrcaTask) -> None:
         print("  exec python file : " + task.python)
         for k, v in task.inputs.items():
             if isinstance(v, str):
@@ -249,7 +252,7 @@ class ExecutionHandler(OrcaHandler):
             fmt = '{0} = {1}'.format(k, v)
             exec(fmt, locals(), globals())
         
-        resolved_file = self.resolve_file_path(task.python)
+        resolved_file = self._resolve_file_path(task.python, ".py")
         if resolved_file is None:
             exec(task.python, globals())
         else: 
@@ -258,10 +261,25 @@ class ExecutionHandler(OrcaHandler):
         return handle_python_result(task.outputs, task.name)
       
       
-                
-              
-        
-          
-        
+      
+####
 
+class ValidationHandler(OrcaHandler):
+    """ValidationHandler, no execution"""
+
+    def handle_csip(self, task: OrcaTask):
+        r = requests.head(task.csip)
+        if r.status_code < 400:
+            raise OrcaConfigException('Url not accessible: "{0}"'.format(task.csip))
+          
+    def handle_http(self, task: OrcaTask):
+        r = requests.head(task.http)
+        if r.status_code < 400:
+            raise OrcaConfigException('Url not accessible: "{0}"'.format(task.http))
+
+    def handle_bash(self, task: OrcaTask):
+        self._resolve_file_path(task.bash, ".sh")
+
+    def handle_python(self, task: OrcaTask):
+        self._resolve_file_path(task.python, ".py")
 
