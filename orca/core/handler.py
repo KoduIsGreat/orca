@@ -9,7 +9,7 @@ from orca.core.tasks import OrcaTask
 from orca.core.config import var,task
 from concurrent.futures import ThreadPoolExecutor
 from dotted.collection import DottedCollection
-
+from abc import ABCMeta, abstractmethod
 
 ## some global utility functions
 
@@ -43,7 +43,7 @@ def handle_python_result(outputs: List, name: str)-> Dict:
 
 ####
 
-class OrcaHandler(object):
+class OrcaHandler(metaclass=ABCMeta):
     """ Base orca handler class for control flow, variable resolution"""
   
     def handle(self, config: 'OrcaConfig') -> None:
@@ -73,17 +73,21 @@ class OrcaHandler(object):
              
              
     # to be overwritten by subclasses
+    @abstractmethod
     def handle_csip(self, task: OrcaTask, yaml_dir: str) -> Dict:
-        raise OrcaConfigException('Not implemented.')
+        pass
       
+    @abstractmethod  
     def handle_http(self, task: OrcaTask, yaml_dir: str) -> Dict:
-        raise OrcaConfigException('Not implemented.')
+        pass
       
+    @abstractmethod
     def handle_bash(self, task: OrcaTask, yaml_dir: str) -> Dict:
-        raise OrcaConfigException('Not implemented.')
-      
+        pass
+    
+    @abstractmethod
     def handle_python(self, task: OrcaTask, yaml_dir: str) -> Dict:
-        raise OrcaConfigException('Not implemented.')
+        pass
 
     def __select_handler(self, task_dict: Dict):
         if 'csip' in task_dict:
