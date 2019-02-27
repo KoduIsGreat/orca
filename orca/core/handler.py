@@ -114,6 +114,23 @@ class OrcaHandler(metaclass=ABCMeta):
             if str(v).startswith('var.'):
                 task_dict[k] = eval(str(v), globals())
         return self.__resolve_task_inputs(task_dict)
+      
+    def resolve_file_path(self, name: str) -> str:
+        """ resolve the full qualified path name"""
+        # maybe change this, because of testing
+        if hasattr(self, 'config'):
+            yaml_dir = self.config.get_yaml_dir()
+        else:
+            yaml_dir = "."
+        if os.path.isfile(name):
+            return name
+        else:
+            rel_path = os.path.join(yaml_dir, name)
+            if os.path.isfile(rel_path):
+                # path relative to yaml file
+                return rel_path
+            else: 
+                return None
 
     def __handle_task(self, task_dict: Dict) -> None:
         handle = self.__select_handler(task_dict)
@@ -231,25 +248,20 @@ class ExecutionHandler(OrcaHandler):
                 v = "\'{0}\'".format(v)
             fmt = '{0} = {1}'.format(k, v)
             exec(fmt, locals(), globals())
-            
         
-        # maybe change this, because of testing
-        if hasattr(self, 'config'):
-            yaml_dir = self.config.get_yaml_dir()
-        else:
-            yaml_dir = "."
-
-        if os.path.isabs(task.python) and os.path.isfile(task.python):
-            # absolute path provided
-            exec(open(task.python).read(), globals())
-        else:
-            if not os.path.isabs(task.python) and os.path.isfile(os.path.join(yaml_dir, task.python)):
-                # path relative to yaml file
-                exec(open(os.path.join(yaml_dir, task.python)).read(), globals())
-            else: 
-                # python inlined
-                exec(task.python, globals())
+        resolved_file = self.resolve_file_path(task.python)
+        if resolved_file is None:
+            exec(task.python, globals())
+        else: 
+            exec(open(resolved_file).read(), globals())
 
         return handle_python_result(task.outputs, task.name)
+      
+      
+                
+              
+        
+          
+        
 
 
