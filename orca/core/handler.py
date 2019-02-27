@@ -74,19 +74,19 @@ class OrcaHandler(metaclass=ABCMeta):
              
     # to be overwritten by subclasses
     @abstractmethod
-    def handle_csip(self, task: OrcaTask, yaml_dir: str) -> Dict:
+    def handle_csip(self, task: OrcaTask) -> Dict:
         pass
       
     @abstractmethod  
-    def handle_http(self, task: OrcaTask, yaml_dir: str) -> Dict:
+    def handle_http(self, task: OrcaTask) -> Dict:
         pass
       
     @abstractmethod
-    def handle_bash(self, task: OrcaTask, yaml_dir: str) -> Dict:
+    def handle_bash(self, task: OrcaTask) -> Dict:
         pass
     
     @abstractmethod
-    def handle_python(self, task: OrcaTask, yaml_dir: str) -> Dict:
+    def handle_python(self, task: OrcaTask) -> Dict:
         pass
 
     def __select_handler(self, task_dict: Dict):
@@ -119,7 +119,7 @@ class OrcaHandler(metaclass=ABCMeta):
         handle = self.__select_handler(task_dict)
         resolved_task = self.__resolve_task(task_dict.copy())
         _task = OrcaTask(resolved_task)
-        result = handle(_task, self.config.get_yaml_dir())
+        result = handle(_task)
         if isinstance(result, dict):
             for k, v in result.items():
                 task[k] = v
@@ -167,7 +167,7 @@ class OrcaHandler(metaclass=ABCMeta):
 class ExecutionHandler(OrcaHandler):
     """Execution Handler, executes csip, bash, python, http"""
 
-    def handle_csip(self, task: OrcaTask, yaml_dir: str) -> Dict:
+    def handle_csip(self, task: OrcaTask) -> Dict:
         try:
             url = task.csip
             name = task.name
@@ -184,7 +184,7 @@ class ExecutionHandler(OrcaHandler):
             raise OrcaTaskException(e)
           
           
-    def handle_http(self, task: OrcaTask, yaml_dir: str) -> Dict:
+    def handle_http(self, task: OrcaTask) -> Dict:
         url = task.http
         name = task.name
         inputs = task.inputs
@@ -199,7 +199,7 @@ class ExecutionHandler(OrcaHandler):
                 return handle_service_result(requests.post(url, inputs).content, name)
 
 
-    def handle_bash(self, task: OrcaTask, yaml_dir: str):
+    def handle_bash(self, task: OrcaTask):
         env = {}
         cmd = task.bash
         config = task.config
@@ -223,13 +223,21 @@ class ExecutionHandler(OrcaHandler):
             return o
         return {}
 
-    def handle_python(self, task: OrcaTask, yaml_dir: str):
+
+    def handle_python(self, task: OrcaTask):
         print("  exec python file : " + task.python)
         for k, v in task.inputs.items():
             if isinstance(v, str):
                 v = "\'{0}\'".format(v)
             fmt = '{0} = {1}'.format(k, v)
             exec(fmt, locals(), globals())
+            
+        
+        # maybe change this, because of testing
+        if hasattr(self, 'config'):
+            yaml_dir = self.config.get_yaml_dir()
+        else:
+            yaml_dir = "."
 
         if os.path.isabs(task.python) and os.path.isfile(task.python):
             # absolute path provided

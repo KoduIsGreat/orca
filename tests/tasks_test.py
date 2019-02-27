@@ -11,7 +11,7 @@ class OrcaHandlerTest(unittest.TestCase):
         mock = inline_python_inputs_mock
         _task = OrcaTask(mock)
         h = ExecutionHandler()
-        output = h.handle_python(_task,  os.getcwd())
+        output = h.handle_python(_task)
         assert _task.name+'.greeting' in output
         assert output[_task.name+'.greeting'] == 'Hello Adam'
 
@@ -19,7 +19,7 @@ class OrcaHandlerTest(unittest.TestCase):
         mock = inline_python_mock
         _task = OrcaTask(mock)
         h = ExecutionHandler()
-        output = h.handle_python(_task, os.getcwd())
+        output = h.handle_python(_task)
         assert _task.name+'.greeting' in output
         assert output[_task.name+'.greeting'] == 'Hello World'
 
@@ -27,7 +27,7 @@ class OrcaHandlerTest(unittest.TestCase):
         mock = file_python_mock
         _task = OrcaTask(mock)
         h = ExecutionHandler()
-        output = h.handle_python(_task, os.getcwd())
+        output = h.handle_python(_task)
         assert _task.name+'.result' in output
         assert output[_task.name+'.result'] == 10
 
@@ -35,6 +35,6 @@ class OrcaHandlerTest(unittest.TestCase):
         mock = file_python_inputs_mock
         _task = OrcaTask(mock)
         h = ExecutionHandler()
-        output = h.handle_python(_task, os.getcwd())
+        output = h.handle_python(_task)
         assert _task.name+'.result' in output
         assert output[_task.name+'.result'] == 25
