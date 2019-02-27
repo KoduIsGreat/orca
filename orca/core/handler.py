@@ -7,7 +7,7 @@ import requests
 from csip import Client
 from typing import List, Dict, TextIO
 from orca.core.tasks import OrcaTask
-from orca.core.config import var,task
+from orca.core.config import var,task,OrcaConfig
 from concurrent.futures import ThreadPoolExecutor
 from dotted.collection import DottedCollection
 from abc import ABCMeta, abstractmethod
@@ -44,9 +44,9 @@ def handle_python_result(outputs: List, name: str)-> Dict:
 ####
 
 class OrcaHandler(metaclass=ABCMeta):
-    """ Base orca handler class for control flow, variable resolution"""
+    """ Abstract orca handler for control flow, variable resolution"""
   
-    def handle(self, config: 'OrcaConfig') -> None:
+    def handle(self, config: OrcaConfig) -> None:
         self.config = config
         self.__handle_sequence(config.job)
   
@@ -74,19 +74,19 @@ class OrcaHandler(metaclass=ABCMeta):
              
     # to be overwritten by subclasses
     @abstractmethod
-    def handle_csip(self, task: OrcaTask) -> Dict:
+    def handle_csip(self, task: OrcaTask) -> None:
         pass
       
     @abstractmethod  
-    def handle_http(self, task: OrcaTask) -> Dict:
+    def handle_http(self, task: OrcaTask) -> None:
         pass
       
     @abstractmethod
-    def handle_bash(self, task: OrcaTask) -> Dict:
+    def handle_bash(self, task: OrcaTask) -> None:
         pass
     
     @abstractmethod
-    def handle_python(self, task: OrcaTask) -> Dict:
+    def handle_python(self, task: OrcaTask) -> None:
         pass
 
     def __select_handler(self, task_dict: Dict):
