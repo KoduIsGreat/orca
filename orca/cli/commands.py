@@ -18,9 +18,7 @@ def run(file, verbose, args):
     """
     Run a workflow.
     """
-    conf = process_config(file)
-    print('process run ' + json.dumps(conf, indent=2))
-    config = OrcaConfig(conf, file.name, args)
-    
+    config = OrcaConfig.create(file, args)
     handler = ExecutionHandler()
+
     handler.execute(config)
