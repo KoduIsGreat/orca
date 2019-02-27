@@ -19,7 +19,7 @@ def values_tostr(d: Dict) -> Dict:
     return a
 
 def handle_service_result(response: Dict, outputs, name: str) -> Dict:
-    d = dict()
+    d = {}
     for k, v in response.items():
         print(" handling req result props: {0} -> {1}".format(k, str(v)))
         if k in outputs:
@@ -27,18 +27,17 @@ def handle_service_result(response: Dict, outputs, name: str) -> Dict:
     return d
 
 def handle_csip_result(response: Dict, outputs: List, name: str) -> Dict:
-    d = dict()
+    d = {}
     for k,v in response.items():
         if k in outputs:
             d[name + "." + k] = v['value']
     return d
 
 def handle_python_result(outputs: List, name: str)-> Dict:
-    d = dict()
+    d = {}
     for v in outputs:
         d[name + '.' + v] = eval(v, globals())
     return d
-
 
 
 
@@ -136,6 +135,9 @@ class OrcaHandler(metaclass=ABCMeta):
                 return None
 
     def __handle_task(self, task_dict: Dict) -> None:
+        name = task_dict.get('task', None)
+        if name is None or not name.isidentifier():
+            raise OrcaConfigException('Invalid task name: "{0}"'.format(name))
         handle = self.__select_handler(task_dict)
         resolved_task = self.__resolve_task(task_dict.copy())
         _task = OrcaTask(resolved_task)
@@ -163,7 +165,7 @@ class OrcaHandler(metaclass=ABCMeta):
         """Handle Looping"""
         i = var_expr.find(",")
         if i == -1:
-            raise OrcaConfigException('Invalid for expression: "{0}"'.format(var_expr))
+            raise OrcaConfigException('Invalid "for" expression: "{0}"'.format(var_expr))
         var = var_expr[:i]
         if not var.isidentifier():
             raise OrcaConfigException('Not a valid identifier: "{0}"'.format(var))
@@ -269,13 +271,13 @@ class ValidationHandler(OrcaHandler):
 
     def handle_csip(self, task: OrcaTask):
         r = requests.head(task.csip)
-        if r.status_code < 400:
-            raise OrcaConfigException('Url not accessible: "{0}"'.format(task.csip))
+        if r.status_code >= 400:
+            raise OrcaConfigException('CSIP url not accessible: "{0}"'.format(task.csip))
           
     def handle_http(self, task: OrcaTask):
         r = requests.head(task.http)
-        if r.status_code < 400:
-            raise OrcaConfigException('Url not accessible: "{0}"'.format(task.http))
+        if r.status_code >= 400:
+            raise OrcaConfigException('Http url not accessible: "{0}"'.format(task.http))
 
     def handle_bash(self, task: OrcaTask):
         self._resolve_file_path(task.bash, ".sh")
