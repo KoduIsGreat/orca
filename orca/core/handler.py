@@ -311,87 +311,87 @@ class DotfileHandler(OrcaHandler):
         self.config = config
         self.start()
         self.decl = True
-        self.count = 0
+        self.idx = 0
         self._handle_sequence(config.job)
         self.dot.append('')
         self.decl= False
-        self.count = 0
+        self.idx = 0
         self._handle_sequence(config.job)
         self.end()
         
     def _handle_fork(self, sequences:Dict) -> None:
         """Handle parallel execution"""
-        name = "fork_" + str(self.count) 
-        term = "term_" + str(self.count) 
-        self.count += 1
+        name = "fork_" + str(self.idx) 
+        term = "term_" + str(self.idx) 
+        self.idx += 1
         if self.decl:
             self.dot.append('{0} [shape=house,fillcolor=cornsilk,fontcolor="dodgerblue3",label="fork"]'.format(name))
             self.dot.append('{0} [shape=point]'.format(term))
             for sequence in sequences:
                 self._handle_sequence(sequence)
         else:
-            self.dot.append(self.last_task + " -> " + name + self.last_vertex_label)
+            self.dot.append('{0} -> {1} {2}'.format(self.last_task, name , self.last_vertex_label))
             self.last_vertex_label = ''
             for sequence in sequences:
                 self.last_task = name
                 self._handle_sequence(sequence)
-                self.dot.append(self.last_task + ' -> ' + term )
+                self.dot.append('{0} -> {1}'.format(self.last_task,term))
             self.last_task = term
         
     def _handle_for(self, sequence:Dict, var_expr:str) -> None:
         """Handle Looping"""
-        name = "for_" + str(self.count) 
-        term = "term_" + str(self.count) 
-        self.count += 1
+        name = "for_" + str(self.idx) 
+        term = "term_" + str(self.idx) 
+        self.idx += 1
         if self.decl:
-            self.dot.append(name + ' [shape=trapezium,fillcolor=cornsilk,fontcolor="dodgerblue3",label="for",xlabel="' + var_expr + '"]')
-            self.dot.append(term + ' [shape=point]')
+            self.dot.append('{0} [shape=trapezium,fillcolor=cornsilk,fontcolor="dodgerblue3",label="for",xlabel="{1}"]'.format(name, var_expr))
+            self.dot.append('{0} [shape=point]'.format(term))
             self._handle_sequence(sequence)
         else:
-            self.dot.append(self.last_task + " -> " + name + self.last_vertex_label)
+            self.dot.append('{0} -> {1} {2}'.format(self.last_task, name , self.last_vertex_label))
             self.last_vertex_label = ''
             self.last_task = name
             self._handle_sequence(sequence)
-            self.dot.append(self.last_task + ' -> ' + term )
-            self.dot.append(term + ' -> ' + name + '[style="dotted"]')
+            self.dot.append('{0} -> {1}'.format(self.last_task,term))
+            self.dot.append('{0} -> {1} [style="dotted"]'.format(term,name))
             self.last_task = term
 
     def _handle_switch(self, sequence:Dict, cond:str) -> None:
         """Handle conditional switch."""
-        name = "switch_" + str(self.count) 
-        term = "term_" + str(self.count) 
-        self.count += 1
+        name = "switch_" + str(self.idx) 
+        term = "term_" + str(self.idx) 
+        self.idx += 1
         if self.decl:
-            self.dot.append(name + ' [shape=diamond,fillcolor=cornsilk,fontcolor="dodgerblue3",label="switch",xlabel="' + cond + '"]')
-            self.dot.append(term + ' [shape=point]')
+            self.dot.append('{0} [shape=diamond,fillcolor=cornsilk,fontcolor="dodgerblue3",label="switch",xlabel="{1}"]'.format(name,cond))
+            self.dot.append('{0} [shape=point]'.format(term))
             for case, seq in sequence.items():
                 self._handle_sequence(seq)
         else:
-            self.dot.append(self.last_task + " -> " + name + self.last_vertex_label)
+            self.dot.append('{0} -> {1} {2}'.format(self.last_task, name , self.last_vertex_label))
             self.last_vertex_label = ''
             for case, seq in sequence.items():
                 self.last_task = name
-                self.last_vertex_label = ' [label="' + case + '"]'
+                self.last_vertex_label = '[label="{0}"]'.format(case)
                 self._handle_sequence(seq)
                 self.dot.append(self.last_task + ' -> ' + term )
             self.last_task = term
 
     def _handle_if(self, sequence:Dict, cond:str) -> None:
         """Handle if."""
-        name = "if_" + str(self.count) 
-        term = "term_" + str(self.count) 
-        self.count += 1
+        name = "if_" + str(self.idx) 
+        term = "term_" + str(self.idx) 
+        self.idx += 1
         if self.decl:
-            self.dot.append(name + ' [shape=diamond,fillcolor=cornsilk,fontcolor="dodgerblue3",label="if",xlabel="' + cond + '"]')
-            self.dot.append(term + ' [shape=point]')
+            self.dot.append('{0} [shape=diamond,fillcolor=cornsilk,fontcolor="dodgerblue3",label="if",xlabel="{1}"]'.format(name, cond))
+            self.dot.append('{0} [shape=point]'.format(term))
             self._handle_sequence(sequence)
         else:
-            self.dot.append(self.last_task + " -> " + name + self.last_vertex_label)
+            self.dot.append('{0} -> {1} {2}'.format(self.last_task, name , self.last_vertex_label))
             self.last_task = name
-            self.last_vertex_label = ' [label="true"]'
+            self.last_vertex_label = '[label="true"]'
             self._handle_sequence(sequence)
-            self.dot.append(self.last_task + ' -> ' + term )
-            self.dot.append(name + ' -> ' + term + '[label="false"]')
+            self.dot.append('{0} -> {1}'.format(self.last_task,term))
+            self.dot.append('{0} -> {1} [label="false"]'.format(name, term))
             self.last_task = term
             
     def start(self):
@@ -400,12 +400,12 @@ class DotfileHandler(OrcaHandler):
                   'end [shape=doublecircle,color=gray,fontsize=10]',
                   'node [style="filled",fontsize=10,fillcolor=aliceblue]',
                   'edge [fontsize=9,fontcolor=dodgerblue3]'
-                   ]
+                  ]
         self.last_task = 'start'
         self.last_vertex_label = ''
       
     def end(self):
-        self.dot.append(self.last_task + " -> end")
+        self.dot.append("{0} -> end".format(self.last_task))
         self.dot.append("}")
         path, ext = os.path.splitext(self.config.get_yaml_file())
         with open(path + ".dot", "w") as text_file:
@@ -414,9 +414,9 @@ class DotfileHandler(OrcaHandler):
         
     def _ht(self, name, shape):
         if self.decl:
-          self.dot.append(name + ' [shape=' + shape + ']')
+          self.dot.append('{0} [shape={1}]'.format(name, shape))
         else:
-          self.dot.append(self.last_task + " -> " + name + self.last_vertex_label)
+          self.dot.append('{0} -> {1} {2}'.format(self.last_task, name , self.last_vertex_label))
           self.last_vertex_label = ''
           self.last_task = name
         
