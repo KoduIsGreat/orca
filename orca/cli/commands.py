@@ -11,10 +11,9 @@ import click
 import click_log
 
 click_log.basic_config(log)
-loglevel = 'INFO'
 
 @click.group()
-@click_log.simple_verbosity_option(log, default=loglevel)
+@click_log.simple_verbosity_option(log, default='INFO')
 def orca():
     pass
 
@@ -50,12 +49,20 @@ def validate(file, args):
     validator.handle(config)
 
 
+# Create a visual workflow:
+#    $ python orca todot abc.yaml
+#  will generate 'abc.dot' in the same folder of abc.yaml
+#  convert this with the 'dot' command:
+#    $ dot -Tpdf switch.dot -o switch.pdf
+#    $ dot -Tpng switch.dot -o switch.png
+#    $ dot -Tsvg switch.dot -o switch.svg
+
 @orca.command()
 @click.argument('file', type=click.File('r'))
 @click.argument('args', nargs=-1)
 def todot(file, args):
     """
-    Create a dot file from an orca workflow.
+    Create a graphviz dot file from an orca workflow. 
     """
     config = OrcaConfig.create(file, args)
     printer = DotfileHandler()
