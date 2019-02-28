@@ -257,8 +257,9 @@ class ExecutionHandler(OrcaHandler):
         resolved_file = self._resolve_file_path(task.python, ".py")
         if resolved_file is None:
             exec(task.python, globals())
-        else: 
-            exec(open(resolved_file).read(), globals())
+        else:
+            with open(resolved_file, 'r') as script:
+              exec(script.read(), globals())
 
         return handle_python_result(task.outputs, task.name)
       
