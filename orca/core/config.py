@@ -25,7 +25,7 @@ class OrcaConfig(object):
     def __process_config(file: TextIO) -> Dict:
       try:
           data = file.read()
-          log.debug(data)
+          log.debug("Raw yaml: {0}".format(data))
           
           # first pass: start with a valid the yaml file.
           yaml.load(data, Loader=yaml.Loader)
@@ -33,10 +33,13 @@ class OrcaConfig(object):
           # processing single quote string literals: " ' '
           repl = r"^(?P<key>\s*[^#:]*):\s+(?P<value>['].*['])\s*$"
           fixed_data = re.sub(repl, '\g<key>: "\g<value>"', data, flags=re.MULTILINE)
-          log.debug(fixed_data)
+          log.debug("Processed yaml: {0}".format(fixed_data))
           
           # second pass: do it.
-          config = yaml.load(fixed_data,Loader=yaml.Loader)
+          config = yaml.load(fixed_data, Loader=yaml.Loader)
+
+          if log.isEnabledFor(logging.DEBUG):   # to avoid always dump json
+            log.debug("Loaded yaml: {0}".format(json.dumps(config, indent=2)))
 
           return config
       except yaml.YAMLError as e:
