@@ -11,6 +11,7 @@ setuptools.setup(
         "csip ==  0.8.13",
         "jsonschema == 2.0",
         "click == 7.0",
+        "click-log == 0.3.2",
         "dotted == 0.1.8",
         "ruamel.yaml == 0.15.88",
     ],

@@ -1,6 +1,6 @@
 #PW:=$(shell cat ~/.pypipw)
 
-VERSION=0.2.0
+VERSION=0.3.0
 
 sdist:
 	echo "name = 'orca'" > orca/__init__.py

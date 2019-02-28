@@ -7,10 +7,11 @@ import requests
 from csip import Client
 from typing import List, Dict, TextIO
 from orca.core.tasks import OrcaTask
-from orca.core.config import var,task,OrcaConfig
+from orca.core.config import var,task,OrcaConfig,log
 from concurrent.futures import ThreadPoolExecutor
 from dotted.collection import DottedCollection
 from abc import ABCMeta, abstractmethod
+
 
 ## some global utility functions
 
@@ -21,7 +22,7 @@ def values_tostr(d: Dict) -> Dict:
 def handle_service_result(response: Dict, outputs, name: str) -> Dict:
     d = {}
     for k, v in response.items():
-        print(" handling req result props: {0} -> {1}".format(k, str(v)))
+        log.debug(" handling req result props: {0} -> {1}".format(k, str(v)))
         if k in outputs:
             d[name + "." + k] = v
     return d
@@ -54,19 +55,19 @@ class OrcaHandler(metaclass=ABCMeta):
         for step in sequence:
             node = next(iter(step))
             if node == "task":
-                print(" ---- task: '{}'".format(step['task']))
+                log.debug(" ---- task: '{}'".format(step['task']))
                 self.__handle_task(step)
             elif node.startswith("if "):
-                print(" ---- if: '{}'".format(node[3:]))
+                log.debug(" ---- if: '{}'".format(node[3:]))
                 self._handle_if(step[node], node[3:])
             elif node.startswith("for "):
-                print(" ---- for: '{}'".format(node[4:]))
+                log.debug(" ---- for: '{}'".format(node[4:]))
                 self._handle_for(step[node], node[4:])
             elif node == "fork":
-                print(" ---- fork: ")
+                log.debug(" ---- fork: ")
                 self._handle_fork(step[node])
             elif node.startswith("switch "):
-                print(" ---- switch: '{}'".format(node[7:]))
+                log.debug(" ---- switch: '{}'".format(node[7:]))
                 self._handle_switch(step[node], node[7:])
             else:
                 raise OrcaConfigException('Invalid step in job: "{0}"'.format(node))
@@ -146,7 +147,7 @@ class OrcaHandler(metaclass=ABCMeta):
             for k, v in result.items():
                 task[k] = v
         elif isinstance(result, str):
-            print(result)
+            log.debug(result)
 
     # control structures
     def _handle_if(self, sequence:Dict, cond:str) -> None:
@@ -232,10 +233,10 @@ class ExecutionHandler(OrcaHandler):
         sp = subprocess.Popen(cmd, env=env, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=wd)
         out, err = sp.communicate()
         if sp.returncode != 0:
-            print('return code: ' + str(sp.returncode))
+            log.error('return code: ' + str(sp.returncode))
         if err:
             for line in err.decode('utf-8').split(delimiter):
-                print("ERROR: " + line)
+                log.error("ERROR: " + line)
         if out:
             o = ""
             for line in out.decode('utf-8').split(delimiter):
@@ -246,7 +247,7 @@ class ExecutionHandler(OrcaHandler):
 
 
     def handle_python(self, task: OrcaTask) -> None:
-        print("  exec python file : " + task.python)
+        log.debug("  exec python file : " + task.python)
         for k, v in task.inputs.items():
             if isinstance(v, str):
                 v = "\'{0}\'".format(v)
@@ -410,7 +411,7 @@ class DotfileHandler(OrcaHandler):
         path, ext = os.path.splitext(self.config.get_yaml_file())
         with open(path + ".dot", "w") as text_file:
             print("\n".join(self.dot), file=text_file)
-        print("generated dot file '" + path + ".dot'")
+        log.info("generated dot file '" + path + ".dot'")
         
     def _ht(self, name, shape):
         if self.decl:

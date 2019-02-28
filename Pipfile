@@ -8,6 +8,7 @@ requests = "*"
 csip = "*"
 jsonschema = "*"
 click = "*"
+click-log = "*"
 dotted = "*"
 "ruamel.yaml" = "*"
 

@@ -1,8 +1,6 @@
-import logging
 from typing import Dict, List
 from dotted.collection import DottedCollection
-
-log = logging.getLogger(__name__)
+from orca.core.config import log
 
 
 class OrcaTaskException(Exception):

@@ -6,6 +6,7 @@ import os
 
 
 class OrcaHandlerTest(unittest.TestCase):
+    pass
 
     def test_inline_inputs_python(self):
         mock = inline_python_inputs_mock

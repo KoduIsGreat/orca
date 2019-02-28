@@ -25,18 +25,18 @@ class OrcaConfig(object):
     def __process_config(file: TextIO) -> Dict:
       try:
           data = file.read()
-          print(data)
+          log.debug(data)
           
           # first pass: start with a valid the yaml file.
-          yaml.load(data)
+          yaml.load(data, Loader=yaml.Loader)
           
           # processing single quote string literals: " ' '
           repl = r"^(?P<key>\s*[^#:]*):\s+(?P<value>['].*['])\s*$"
           fixed_data = re.sub(repl, '\g<key>: "\g<value>"', data, flags=re.MULTILINE)
-          print(fixed_data)
+          log.debug(fixed_data)
           
           # second pass: do it.
-          config = yaml.load(fixed_data)
+          config = yaml.load(fixed_data,Loader=yaml.Loader)
 
           return config
       except yaml.YAMLError as e:
@@ -45,9 +45,8 @@ class OrcaConfig(object):
   
     @staticmethod
     def create(file: TextIO, args: List[str] = None) -> 'OrcaConfig' :
-      d = OrcaConfig.__process_config(file)
-      return OrcaConfig(d, file.name, args)
-      
+        d = OrcaConfig.__process_config(file)
+        return OrcaConfig(d, file.name, args)
   
     def __init__(self, config: Dict, file: str = None, args: List[str] = None):
         ## the yaml file (if used)
@@ -70,17 +69,19 @@ class OrcaConfig(object):
         for dep in self.deps:
             try:
                 exec("import " + dep, globals())
+                log.debug("importing dependency: '{0}'".format(dep))
             except OrcaConfigException as b:
                 log.error("Orca could not resolve the {0} dependency".format(dep))
       
     def __set_vars(self, variables: Dict, args: List[str]) -> None:
         """put all variables as globals"""
-        print(variables)
+        #log.debug(variables)
+        log.debug("setting job variables:")
         for key, val in variables.items():
             if not key.isidentifier():
                 raise OrcaConfigException('Invalid variable identifier: "{0}"'.format(key))
             try:
                 exec("var.{0}={1}".format(key,val))
-                print("var.{0} = {1} -> {2}".format(key, str(val), str(eval("var."+key))))
+                log.debug("  set var.{0} = {1} -> {2}".format(key, str(val), str(eval("var."+key))))
             except Exception as e:
                 raise e
