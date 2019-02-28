@@ -62,6 +62,9 @@ class OrcaConfig(object):
         
     def get_yaml_dir(self) -> str:
         return os.path.dirname(self.file) if self.file is not None else "."
+    
+    def get_yaml_file(self) -> str:
+        return self.file
 
     def __resolve_dependencies(self):
         for dep in self.deps:

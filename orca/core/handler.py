@@ -41,16 +41,16 @@ def handle_python_result(outputs: List, name: str)-> Dict:
 
 
 
-####
+#############################################
 
 class OrcaHandler(metaclass=ABCMeta):
     """ Abstract orca handler for control flow, variable resolution"""
-  
+    
     def handle(self, config: OrcaConfig) -> None:
         self.config = config
-        self.__handle_sequence(config.job)
+        self._handle_sequence(config.job)
   
-    def __handle_sequence(self, sequence: Dict) -> None:
+    def _handle_sequence(self, sequence: Dict) -> None:
         for step in sequence:
             node = next(iter(step))
             if node == "task":
@@ -58,16 +58,16 @@ class OrcaHandler(metaclass=ABCMeta):
                 self.__handle_task(step)
             elif node.startswith("if "):
                 print(" ---- if: '{}'".format(node[3:]))
-                self.__handle_if(step[node], node[3:])
+                self._handle_if(step[node], node[3:])
             elif node.startswith("for "):
                 print(" ---- for: '{}'".format(node[4:]))
-                self.__handle_for(step[node], node[4:])
+                self._handle_for(step[node], node[4:])
             elif node == "fork":
                 print(" ---- fork: ")
-                self.__handle_fork(step[node])
+                self._handle_fork(step[node])
             elif node.startswith("switch "):
                 print(" ---- switch: '{}'".format(node[7:]))
-                self.__handle_switch(step[node], node[7:])
+                self._handle_switch(step[node], node[7:])
             else:
                 raise OrcaConfigException('Invalid step in job: "{0}"'.format(node))
              
@@ -149,19 +149,19 @@ class OrcaHandler(metaclass=ABCMeta):
             print(result)
 
     # control structures
-    def __handle_if(self, sequence:Dict, cond:str) -> None:
+    def _handle_if(self, sequence:Dict, cond:str) -> None:
         """Handle if."""
         if eval(cond, globals()):
-            self.__handle_sequence(sequence)
+            self._handle_sequence(sequence)
             
-    def __handle_switch(self, sequence:Dict, cond:str) -> None:
+    def _handle_switch(self, sequence:Dict, cond:str) -> None:
         """Handle conditional switch."""
         c = eval(cond, globals())
         seq = sequence.get(c, sequence.get("default", None))
         if seq is not None:
-            self.__handle_sequence(seq)
+            self._handle_sequence(seq)
  
-    def __handle_for(self, sequence:Dict, var_expr:str) -> None:
+    def _handle_for(self, sequence:Dict, var_expr:str) -> None:
         """Handle Looping"""
         i = var_expr.find(",")
         if i == -1:
@@ -172,19 +172,18 @@ class OrcaHandler(metaclass=ABCMeta):
         expr = var_expr[i+1:]
         for i in eval(expr, globals()):
             exec("{0}='{1}'".format(var,i), globals())
-            self.__handle_sequence(sequence)
+            self._handle_sequence(sequence)
 
-    def __handle_fork(self, sequences:Dict) -> None:
+    def _handle_fork(self, sequences:Dict) -> None:
         """Handle parallel execution"""
         with ThreadPoolExecutor(max_workers=(len(sequences))) as executor:
             for sequence in sequences:
-                executor.submit(self.__handle_sequence, sequence)
+                executor.submit(self._handle_sequence, sequence)
 
 
 
 
-
-####
+#############################################
 
 class ExecutionHandler(OrcaHandler):
     """Execution Handler, executes csip, bash, python, http"""
@@ -233,7 +232,7 @@ class ExecutionHandler(OrcaHandler):
         sp = subprocess.Popen(cmd, env=env, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=wd)
         out, err = sp.communicate()
         if sp.returncode != 0:
-            print('code: ' + str(sp.returncode))
+            print('return code: ' + str(sp.returncode))
         if err:
             for line in err.decode('utf-8').split(delimiter):
                 print("ERROR: " + line)
@@ -263,12 +262,11 @@ class ExecutionHandler(OrcaHandler):
         return handle_python_result(task.outputs, task.name)
       
       
-      
-####
+#############################################
 
 class ValidationHandler(OrcaHandler):
     """ValidationHandler, no execution"""
-
+    
     def handle_csip(self, task: OrcaTask):
         r = requests.head(task.csip)
         if r.status_code >= 400:
@@ -285,3 +283,152 @@ class ValidationHandler(OrcaHandler):
     def handle_python(self, task: OrcaTask):
         self._resolve_file_path(task.python, ".py")
 
+
+#############################################
+
+class NoneHandler(OrcaHandler):
+    """Handler that does not do anything, useful for testing"""
+    
+    def handle_csip(self, task: OrcaTask):
+        pass
+          
+    def handle_http(self, task: OrcaTask):
+        pass
+
+    def handle_bash(self, task: OrcaTask):
+        pass
+
+    def handle_python(self, task: OrcaTask):
+        pass
+
+
+#############################################
+
+class DotfileHandler(OrcaHandler):
+    """Handles printing of a dot file"""
+      
+    def handle(self, config: OrcaConfig) -> None:
+        self.config = config
+        self.start()
+        self.decl = True
+        self.count = 0
+        self._handle_sequence(config.job)
+        self.dot.append('')
+        self.decl= False
+        self.count = 0
+        self._handle_sequence(config.job)
+        self.end()
+        
+    def _handle_fork(self, sequences:Dict) -> None:
+        """Handle parallel execution"""
+        name = "fork_" + str(self.count) 
+        term = "term_" + str(self.count) 
+        self.count += 1
+        if self.decl:
+            self.dot.append('{0} [shape=house,fillcolor=cornsilk,fontcolor="dodgerblue3",label="fork"]'.format(name))
+            self.dot.append('{0} [shape=point]'.format(term))
+            for sequence in sequences:
+                self._handle_sequence(sequence)
+        else:
+            self.dot.append(self.last_task + " -> " + name + self.last_vertex_label)
+            self.last_vertex_label = ''
+            for sequence in sequences:
+                self.last_task = name
+                self._handle_sequence(sequence)
+                self.dot.append(self.last_task + ' -> ' + term )
+            self.last_task = term
+        
+    def _handle_for(self, sequence:Dict, var_expr:str) -> None:
+        """Handle Looping"""
+        name = "for_" + str(self.count) 
+        term = "term_" + str(self.count) 
+        self.count += 1
+        if self.decl:
+            self.dot.append(name + ' [shape=trapezium,fillcolor=cornsilk,fontcolor="dodgerblue3",label="for",xlabel="' + var_expr + '"]')
+            self.dot.append(term + ' [shape=point]')
+            self._handle_sequence(sequence)
+        else:
+            self.dot.append(self.last_task + " -> " + name + self.last_vertex_label)
+            self.last_vertex_label = ''
+            self.last_task = name
+            self._handle_sequence(sequence)
+            self.dot.append(self.last_task + ' -> ' + term )
+            self.dot.append(term + ' -> ' + name + '[style="dotted"]')
+            self.last_task = term
+
+    def _handle_switch(self, sequence:Dict, cond:str) -> None:
+        """Handle conditional switch."""
+        name = "switch_" + str(self.count) 
+        term = "term_" + str(self.count) 
+        self.count += 1
+        if self.decl:
+            self.dot.append(name + ' [shape=diamond,fillcolor=cornsilk,fontcolor="dodgerblue3",label="switch",xlabel="' + cond + '"]')
+            self.dot.append(term + ' [shape=point]')
+            for case, seq in sequence.items():
+                self._handle_sequence(seq)
+        else:
+            self.dot.append(self.last_task + " -> " + name + self.last_vertex_label)
+            self.last_vertex_label = ''
+            for case, seq in sequence.items():
+                self.last_task = name
+                self.last_vertex_label = ' [label="' + case + '"]'
+                self._handle_sequence(seq)
+                self.dot.append(self.last_task + ' -> ' + term )
+            self.last_task = term
+
+    def _handle_if(self, sequence:Dict, cond:str) -> None:
+        """Handle if."""
+        name = "if_" + str(self.count) 
+        term = "term_" + str(self.count) 
+        self.count += 1
+        if self.decl:
+            self.dot.append(name + ' [shape=diamond,fillcolor=cornsilk,fontcolor="dodgerblue3",label="if",xlabel="' + cond + '"]')
+            self.dot.append(term + ' [shape=point]')
+            self._handle_sequence(sequence)
+        else:
+            self.dot.append(self.last_task + " -> " + name + self.last_vertex_label)
+            self.last_task = name
+            self.last_vertex_label = ' [label="true"]'
+            self._handle_sequence(sequence)
+            self.dot.append(self.last_task + ' -> ' + term )
+            self.dot.append(name + ' -> ' + term + '[label="false"]')
+            self.last_task = term
+            
+    def start(self):
+        self.dot = ['digraph {',
+                  'start [shape=doublecircle,color=gray,fontsize=10]',
+                  'end [shape=doublecircle,color=gray,fontsize=10]',
+                  'node [style="filled",fontsize=10,fillcolor=aliceblue]',
+                  'edge [fontsize=9,fontcolor=dodgerblue3]'
+                   ]
+        self.last_task = 'start'
+        self.last_vertex_label = ''
+      
+    def end(self):
+        self.dot.append(self.last_task + " -> end")
+        self.dot.append("}")
+        path, ext = os.path.splitext(self.config.get_yaml_file())
+        with open(path + ".dot", "w") as text_file:
+            print("\n".join(self.dot), file=text_file)
+        print("generated dot file '" + path + ".dot'")
+        
+    def _ht(self, name, shape):
+        if self.decl:
+          self.dot.append(name + ' [shape=' + shape + ']')
+        else:
+          self.dot.append(self.last_task + " -> " + name + self.last_vertex_label)
+          self.last_vertex_label = ''
+          self.last_task = name
+        
+    def handle_csip(self, task: OrcaTask):
+        self._ht(task.name, 'cds')
+          
+    def handle_http(self, task: OrcaTask):
+        self._ht(task.name, 'cds')
+
+    def handle_bash(self, task: OrcaTask):
+        self._ht(task.name, 'note')
+
+    def handle_python(self, task: OrcaTask):
+        self._ht(task.name, 'note')
+  
