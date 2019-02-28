@@ -327,7 +327,7 @@ class DotfileHandler(OrcaHandler):
         term = "term_" + str(self.idx) 
         self.idx += 1
         if self.decl:
-            self.dot.append('{0} [shape=house,fillcolor=cornsilk,fontcolor="dodgerblue3",label="fork"]'.format(name))
+            self.dot.append('{0} [shape=house,fillcolor=cornsilk,fontcolor="dodgerblue3",label="FORK"]'.format(name))
             self.dot.append('{0} [shape=point]'.format(term))
             for sequence in sequences:
                 self._handle_sequence(sequence)
@@ -346,7 +346,7 @@ class DotfileHandler(OrcaHandler):
         term = "term_" + str(self.idx) 
         self.idx += 1
         if self.decl:
-            self.dot.append('{0} [shape=trapezium,fillcolor=cornsilk,fontcolor="dodgerblue3",label="for",xlabel="{1}"]'.format(name, var_expr))
+            self.dot.append('{0} [shape=trapezium,fillcolor=cornsilk,fontcolor="dodgerblue3",label="FOR\n{1}"]'.format(name, var_expr))
             self.dot.append('{0} [shape=point]'.format(term))
             self._handle_sequence(sequence)
         else:
@@ -364,7 +364,7 @@ class DotfileHandler(OrcaHandler):
         term = "term_" + str(self.idx) 
         self.idx += 1
         if self.decl:
-            self.dot.append('{0} [shape=diamond,fillcolor=cornsilk,fontcolor="dodgerblue3",label="switch",xlabel="{1}"]'.format(name,cond))
+            self.dot.append('{0} [shape=diamond,fillcolor=cornsilk,fontcolor="dodgerblue3",label="SWITCH\n{1}"]'.format(name,cond))
             self.dot.append('{0} [shape=point]'.format(term))
             for case, seq in sequence.items():
                 self._handle_sequence(seq)
@@ -384,7 +384,7 @@ class DotfileHandler(OrcaHandler):
         term = "term_" + str(self.idx) 
         self.idx += 1
         if self.decl:
-            self.dot.append('{0} [shape=diamond,fillcolor=cornsilk,fontcolor="dodgerblue3",label="if",xlabel="{1}"]'.format(name, cond))
+            self.dot.append('{0} [shape=diamond,fillcolor=cornsilk,fontcolor="dodgerblue3",label="IF\n{1}"]'.format(name, cond))
             self.dot.append('{0} [shape=point]'.format(term))
             self._handle_sequence(sequence)
         else:
@@ -398,39 +398,39 @@ class DotfileHandler(OrcaHandler):
             
     def start(self):
         self.dot = ['digraph {',
-                  'start [shape=doublecircle,color=gray,fontsize=10]',
-                  'end [shape=doublecircle,color=gray,fontsize=10]',
-                  'node [style="filled",fontsize=10,fillcolor=aliceblue]',
+                  'START [shape=doublecircle,color=gray,fontsize=10]',
+                  'END [shape=doublecircle,color=gray,fontsize=10]',
+                  'node [style="filled",fontsize=10,fillcolor=aliceblue,color=gray,fixedsize=true]',
                   'edge [fontsize=9,fontcolor=dodgerblue3]'
                   ]
-        self.last_task = 'start'
+        self.last_task = 'START'
         self.last_vertex_label = ''
       
     def end(self):
-        self.dot.append("{0} -> end".format(self.last_task))
+        self.dot.append("{0} -> END".format(self.last_task))
         self.dot.append("}")
         path, ext = os.path.splitext(self.config.get_yaml_file())
         with open(path + ".dot", "w") as text_file:
             print("\n".join(self.dot), file=text_file)
         log.info("generated dot file '" + path + ".dot'")
         
-    def _ht(self, name, shape):
+    def _ht(self, name: str, shape: str, label:str = '' ):
         if self.decl:
-          self.dot.append('{0} [shape={1}]'.format(name, shape))
+          self.dot.append('{0} [shape={1}, label="\'{0}\'\n{2}"]'.format(name, shape, label))
         else:
           self.dot.append('{0} -> {1} {2}'.format(self.last_task, name , self.last_vertex_label))
           self.last_vertex_label = ''
           self.last_task = name
         
     def handle_csip(self, task: OrcaTask):
-        self._ht(task.name, 'cds')
+        self._ht(task.name, 'cds', task.csip)
           
     def handle_http(self, task: OrcaTask):
-        self._ht(task.name, 'cds')
+        self._ht(task.name, 'cds', task.http)
 
     def handle_bash(self, task: OrcaTask):
         self._ht(task.name, 'note')
 
     def handle_python(self, task: OrcaTask):
-        self._ht(task.name, 'note')
+        self._ht(task.name, 'note', task.python)
   
