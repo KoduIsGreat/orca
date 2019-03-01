@@ -58,6 +58,8 @@ class OrcaConfig(object):
     self.deps = config.get('dependencies', [])
     self.var = config.get('var', {})
     self.job = config['job']
+    self.version = config.get('version', '0.0')
+    self.name = config.get('name', file)
     
     self.__resolve_dependencies()
     self.__set_vars({} if self.var is None else self.var, args if args is not None else [])
@@ -66,10 +68,15 @@ class OrcaConfig(object):
   def get_yaml_dir(self) -> str:
     return os.path.dirname(self.file) if self.file is not None else "."
   
-  
   def get_yaml_file(self) -> str:
     return self.file
+  
+  def get_version() -> str:
+    return self.version
 
+  def get_name() -> str:
+    return self.name
+  
   def __resolve_dependencies(self) -> None:
     for dep in self.deps:
       try:

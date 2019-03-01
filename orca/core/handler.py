@@ -11,6 +11,7 @@ from orca.core.config import var,task,OrcaConfig,log
 from concurrent.futures import ThreadPoolExecutor
 from dotted.collection import DottedCollection
 from abc import ABCMeta, abstractmethod
+from orca.core.ledger import Ledger
 
 
 ## some global utility functions
@@ -50,13 +51,14 @@ class OrcaHandler(metaclass=ABCMeta):
   def handle(self, config: OrcaConfig) -> None:
     self.config = config
     self._handle_sequence(config.job)
+    self.close()
   
   def _handle_sequence(self, sequence: Dict) -> None:
     for step in sequence:
       node = next(iter(step))
       if node == "task":
         log.debug(" ---- task: '{}'".format(step['task']))
-        self.__handle_task(step)
+        self._handle_task(step)
       elif node.startswith("if "):
         log.debug(" ---- if: '{}'".format(node[3:]))
         self._handle_if(step[node], node[3:])
@@ -71,23 +73,25 @@ class OrcaHandler(metaclass=ABCMeta):
         self._handle_switch(step[node], node[7:])
       else:
         raise OrcaConfigException('Invalid step in job: "{0}"'.format(node))
-             
+
+  def close(self):
+    pass
              
   # to be overwritten by subclasses
   @abstractmethod
-  def handle_csip(self, task: OrcaTask) -> None:
+  def handle_csip(self, task: OrcaTask) -> Dict:
     pass
       
   @abstractmethod  
-  def handle_http(self, task: OrcaTask) -> None:
+  def handle_http(self, task: OrcaTask) -> Dict:
     pass
       
   @abstractmethod
-  def handle_bash(self, task: OrcaTask) -> None:
+  def handle_bash(self, task: OrcaTask) -> Dict:
     pass
     
   @abstractmethod
-  def handle_python(self, task: OrcaTask) -> None:
+  def handle_python(self, task: OrcaTask) -> Dict:
     pass
 
   def __select_handler(self, task_dict: Dict):
@@ -135,7 +139,7 @@ class OrcaHandler(metaclass=ABCMeta):
           raise OrcaConfigException('File not found: "{0}"'.format(name))
         return None
 
-  def __handle_task(self, task_dict: Dict) -> None:
+  def _handle_task(self, task_dict: Dict) -> OrcaTask:
     name = task_dict.get('task', None)
     if name is None or not name.isidentifier():
       raise OrcaConfigException('Invalid task name: "{0}"'.format(name))
@@ -148,6 +152,7 @@ class OrcaHandler(metaclass=ABCMeta):
         task[k] = v
     elif isinstance(result, str):
       log.debug(result)
+    return _task
 
   # control structures
   def _handle_if(self, sequence:Dict, cond:str) -> None:
@@ -189,8 +194,18 @@ class OrcaHandler(metaclass=ABCMeta):
 
 class ExecutionHandler(OrcaHandler):
   """Execution Handler, executes csip, bash, python, http"""
+  
+  def __init__(self, ledger: Ledger = None):
+    self.ledger = ledger or Ledger()
+  
+  def close(self):
+    self.ledger.close()
 
-  def handle_csip(self, task: OrcaTask) -> None:
+  def _handle_task(self, task_dict: Dict) -> None:
+    _task = super()._handle_task(task_dict)
+    self.ledger.add(self.config, _task, task, {})
+
+  def handle_csip(self, task: OrcaTask) -> Dict:
     try:
       url = task.csip
       name = task.name
@@ -206,8 +221,7 @@ class ExecutionHandler(OrcaHandler):
     except requests.exceptions.HTTPError as e:
       raise OrcaTaskException(e)
           
-          
-  def handle_http(self, task: OrcaTask) -> None:
+  def handle_http(self, task: OrcaTask) -> Dict:
     url = task.http
     name = task.name
     inputs = task.inputs
@@ -222,7 +236,7 @@ class ExecutionHandler(OrcaHandler):
         return handle_service_result(requests.post(url, inputs).content, name)
 
 
-  def handle_bash(self, task: OrcaTask) -> None:
+  def handle_bash(self, task: OrcaTask) -> Dict:
     env = {}
     cmd = task.bash
     config = task.config
@@ -247,7 +261,7 @@ class ExecutionHandler(OrcaHandler):
     return {}
 
 
-  def handle_python(self, task: OrcaTask) -> None:
+  def handle_python(self, task: OrcaTask) -> Dict:
     log.debug("  exec python file : " + task.python)
     for k, v in task.inputs.items():
       if isinstance(v, str):
@@ -269,20 +283,20 @@ class ExecutionHandler(OrcaHandler):
 class ValidationHandler(OrcaHandler):
   """ValidationHandler, no execution"""
   
-  def handle_csip(self, task: OrcaTask):
+  def handle_csip(self, task: OrcaTask) -> Dict:
     r = requests.head(task.csip)
     if r.status_code >= 400:
       raise OrcaConfigException('CSIP url not accessible: "{0}"'.format(task.csip))
         
-  def handle_http(self, task: OrcaTask):
+  def handle_http(self, task: OrcaTask) -> Dict:
     r = requests.head(task.http)
     if r.status_code >= 400:
       raise OrcaConfigException('Http url not accessible: "{0}"'.format(task.http))
 
-  def handle_bash(self, task: OrcaTask):
+  def handle_bash(self, task: OrcaTask) -> Dict:
     self._resolve_file_path(task.bash, ".sh")
 
-  def handle_python(self, task: OrcaTask):
+  def handle_python(self, task: OrcaTask) -> Dict:
     self._resolve_file_path(task.python, ".py")
 
 
@@ -291,16 +305,16 @@ class ValidationHandler(OrcaHandler):
 class NoneHandler(OrcaHandler):
   """Handler that does not do anything, useful for testing"""
   
-  def handle_csip(self, task: OrcaTask):
+  def handle_csip(self, task: OrcaTask)  -> Dict:
     pass
         
-  def handle_http(self, task: OrcaTask):
+  def handle_http(self, task: OrcaTask) -> Dict:
     pass
 
-  def handle_bash(self, task: OrcaTask):
+  def handle_bash(self, task: OrcaTask) -> Dict:
     pass
 
-  def handle_python(self, task: OrcaTask):
+  def handle_python(self, task: OrcaTask) -> Dict:
     pass
 
 
@@ -311,7 +325,14 @@ class DotfileHandler(OrcaHandler):
       
   def handle(self, config: OrcaConfig) -> None:
     self.config = config
-    self.start()
+    self.dot = ['digraph {',
+                'START [shape=doublecircle,color=gray,fontsize=10]',
+                'END [shape=doublecircle,color=gray,fontsize=10]',
+                'node [style="filled",fontsize=10,fillcolor=aliceblue,color=gray,fixedsize=true]',
+                'edge [fontsize=9,fontcolor=dodgerblue3]'
+                ]
+    self.last_task = 'START'
+    self.last_vertex_label = ''
     self.decl = True
     self.idx = 0
     self._handle_sequence(config.job)
@@ -319,7 +340,7 @@ class DotfileHandler(OrcaHandler):
     self.decl= False
     self.idx = 0
     self._handle_sequence(config.job)
-    self.end()
+    self.close()
       
   def _handle_fork(self, sequences:Dict) -> None:
     """Handle parallel execution"""
@@ -346,7 +367,7 @@ class DotfileHandler(OrcaHandler):
     term = "term_" + str(self.idx) 
     self.idx += 1
     if self.decl:
-      self.dot.append('{0} [shape=trapezium,fillcolor=cornsilk,fontcolor="dodgerblue3",label="FOR\n{1}"]'.format(name, var_expr))
+      self.dot.append('{0} [shape=trapezium,fillcolor=cornsilk,fontcolor="dodgerblue3",label="FOR\\n{1}"]'.format(name, var_expr))
       self.dot.append('{0} [shape=point]'.format(term))
       self._handle_sequence(sequence)
     else:
@@ -364,7 +385,7 @@ class DotfileHandler(OrcaHandler):
     term = "term_" + str(self.idx) 
     self.idx += 1
     if self.decl:
-      self.dot.append('{0} [shape=diamond,fillcolor=cornsilk,fontcolor="dodgerblue3",label="SWITCH\n{1}"]'.format(name,cond))
+      self.dot.append('{0} [shape=diamond,fillcolor=cornsilk,fontcolor="dodgerblue3",label="SWITCH\\n{1}"]'.format(name,cond))
       self.dot.append('{0} [shape=point]'.format(term))
       for case, seq in sequence.items():
         self._handle_sequence(seq)
@@ -384,7 +405,7 @@ class DotfileHandler(OrcaHandler):
     term = "term_" + str(self.idx) 
     self.idx += 1
     if self.decl:
-      self.dot.append('{0} [shape=diamond,fillcolor=cornsilk,fontcolor="dodgerblue3",label="IF\n{1}"]'.format(name, cond))
+      self.dot.append('{0} [shape=diamond,fillcolor=cornsilk,fontcolor="dodgerblue3",label="IF\\n{1}"]'.format(name, cond))
       self.dot.append('{0} [shape=point]'.format(term))
       self._handle_sequence(sequence)
     else:
@@ -396,17 +417,8 @@ class DotfileHandler(OrcaHandler):
       self.dot.append('{0} -> {1} [label="false"]'.format(name, term))
       self.last_task = term
             
-  def start(self):
-    self.dot = ['digraph {',
-                'START [shape=doublecircle,color=gray,fontsize=10]',
-                'END [shape=doublecircle,color=gray,fontsize=10]',
-                'node [style="filled",fontsize=10,fillcolor=aliceblue,color=gray,fixedsize=true]',
-                'edge [fontsize=9,fontcolor=dodgerblue3]'
-                ]
-    self.last_task = 'START'
-    self.last_vertex_label = ''
-      
-  def end(self):
+
+  def close(self):
     self.dot.append("{0} -> END".format(self.last_task))
     self.dot.append("}")
     path, ext = os.path.splitext(self.config.get_yaml_file())
@@ -416,7 +428,7 @@ class DotfileHandler(OrcaHandler):
         
   def _ht(self, name: str, shape: str, label:str = '' ):
     if self.decl:
-      self.dot.append('{0} [shape={1}, label="\'{0}\'\n{2}"]'.format(name, shape, label))
+      self.dot.append('{0} [shape={1}, label="\'{0}\'\\n{2}"]'.format(name, shape, label))
     else:
       self.dot.append('{0} -> {1} {2}'.format(self.last_task, name , self.last_vertex_label))
       self.last_vertex_label = ''
