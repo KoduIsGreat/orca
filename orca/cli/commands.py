@@ -1,5 +1,5 @@
 
-import orca as o
+import orca as o   # must be renamed
 from orca.core.config import OrcaConfig
 from orca.core.config import log
 from orca.core.handler import ExecutionHandler
@@ -15,38 +15,38 @@ click_log.basic_config(log)
 @click.group()
 @click_log.simple_verbosity_option(log, default='INFO')
 def orca():
-    pass
+  pass
 
 
 @orca.command()
 def version():
-    """
-    Print the orca version.
-    """
-    print(o.__version__)
+  """
+  Print the orca version.
+  """
+  print(o.__version__)
     
 @orca.command()
 @click.argument('file', type=click.File('r'))
 @click.argument('args', nargs=-1)
 def run(file, args):
-    """
-    Run an orca workflow
-    """
-    config = OrcaConfig.create(file, args)
-    executor = ExecutionHandler()
-    executor.handle(config)
+  """
+  Run an orca workflow.
+  """
+  config = OrcaConfig.create(file, args)
+  executor = ExecutionHandler()
+  executor.handle(config)
 
 
 @orca.command()
 @click.argument('file', type=click.File('r'))
 @click.argument('args', nargs=-1)
 def validate(file, args):
-    """
-    Validate an orca workflow.
-    """
-    config = OrcaConfig.create(file, args)
-    validator = ValidationHandler()
-    validator.handle(config)
+  """
+  Validate an orca workflow.
+  """
+  config = OrcaConfig.create(file, args)
+  validator = ValidationHandler()
+  validator.handle(config)
 
 
 # Create a visual workflow:
@@ -61,10 +61,10 @@ def validate(file, args):
 @click.argument('file', type=click.File('r'))
 @click.argument('args', nargs=-1)
 def todot(file, args):
-    """
-    Create a graphviz dot file from an orca workflow. 
-    """
-    config = OrcaConfig.create(file, args)
-    printer = DotfileHandler()
-    printer.handle(config)
+  """
+  Create a graphviz dot file from an orca workflow. 
+  """
+  config = OrcaConfig.create(file, args)
+  printer = DotfileHandler()
+  printer.handle(config)
 
