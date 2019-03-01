@@ -45,48 +45,47 @@ class OrcaConfig(object):
       log.error(e)
       raise OrcaConfigException("error loading yaml file.")
   
-    @staticmethod
-    def create(file: TextIO, args: List[str] = None) -> 'OrcaConfig' :
-      d = OrcaConfig.__process_config(file)
-      return OrcaConfig(d, file.name, args)
-
+  @staticmethod
+  def create(file: TextIO, args: List[str] = None) -> 'OrcaConfig':
+    d = OrcaConfig.__process_config(file)
+    return OrcaConfig(d, file.name, args)
 
   
-    def __init__(self, config: Dict, file: str = None, args: List[str] = None):
-      ## the yaml file (if used)
-      self.file = file
-      self.conf = config.get('conf', {})
-      self.deps = config.get('dependencies', [])
-      self.var = config.get('var', {})
-      self.job = config['job']
+  def __init__(self, config: Dict, file: str = None, args: List[str] = None):
+    ## the yaml file (if used)
+    self.file = file
+    self.conf = config.get('conf', {})
+    self.deps = config.get('dependencies', [])
+    self.var = config.get('var', {})
+    self.job = config['job']
+    
+    self.__resolve_dependencies()
+    self.__set_vars({} if self.var is None else self.var, args if args is not None else [])
       
-      self.__resolve_dependencies()
-      self.__set_vars({} if self.var is None else self.var, args if args is not None else [])
-        
-        
-    def get_yaml_dir(self) -> str:
-      return os.path.dirname(self.file) if self.file is not None else "."
-    
-    
-    def get_yaml_file(self) -> str:
-      return self.file
-
-    def __resolve_dependencies(self) -> None:
-      for dep in self.deps:
-        try:
-          exec("import " + dep, globals())
-          log.debug("importing dependency: '{0}'".format(dep))
-        except OrcaConfigException as b:
-          log.error("Orca could not resolve the {0} dependency".format(dep))
+      
+  def get_yaml_dir(self) -> str:
+    return os.path.dirname(self.file) if self.file is not None else "."
   
-    def __set_vars(self, variables: Dict, args: List[str]) -> None:
-      """put all variables as globals"""
-      log.debug("setting job variables:")
-      for key, val in variables.items():
-        if not key.isidentifier():
-          raise OrcaConfigException('Invalid variable identifier: "{0}"'.format(key))
-        try:
-          exec("var.{0}={1}".format(key,val))
-          log.debug("  set var.{0} = {1} -> {2}".format(key, str(val), str(eval("var."+key))))
-        except Exception as e:
-          raise e
+  
+  def get_yaml_file(self) -> str:
+    return self.file
+
+  def __resolve_dependencies(self) -> None:
+    for dep in self.deps:
+      try:
+        exec("import " + dep, globals())
+        log.debug("importing dependency: '{0}'".format(dep))
+      except OrcaConfigException as b:
+        log.error("Orca could not resolve the {0} dependency".format(dep))
+
+  def __set_vars(self, variables: Dict, args: List[str]) -> None:
+    """put all variables as globals"""
+    log.debug("setting job variables:")
+    for key, val in variables.items():
+      if not key.isidentifier():
+        raise OrcaConfigException('Invalid variable identifier: "{0}"'.format(key))
+      try:
+        exec("var.{0}={1}".format(key,val))
+        log.debug("  set var.{0} = {1} -> {2}".format(key, str(val), str(eval("var."+key))))
+      except Exception as e:
+        raise e
