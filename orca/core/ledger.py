@@ -32,6 +32,11 @@ class LoggingLedger(Ledger):
 
 
 ############################################
+# 
+# python3 orca run --json-ledger-file /tmp/f.json for.yaml
+#
+# maybe import into a db:
+# mongoimport --db orca --collection ledger --file /tmp/f.json
 
 class JSONFileLedger(Ledger):
   
