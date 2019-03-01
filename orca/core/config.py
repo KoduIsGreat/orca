@@ -71,10 +71,10 @@ class OrcaConfig(object):
   def get_yaml_file(self) -> str:
     return self.file
   
-  def get_version() -> str:
+  def get_version(self) -> str:
     return self.version
 
-  def get_name() -> str:
+  def get_name(self) -> str:
     return self.name
   
   def __resolve_dependencies(self) -> None:

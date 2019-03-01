@@ -5,6 +5,7 @@ from orca.core.config import log
 from orca.core.handler import ExecutionHandler
 from orca.core.handler import ValidationHandler
 from orca.core.handler import DotfileHandler
+from orca.core.ledger import JSONFileLedger
 
 import logging
 import click
@@ -26,14 +27,19 @@ def version():
   print(o.__version__)
     
 @orca.command()
+@click.option('--json-ledger-file', type=click.Path())
 @click.argument('file', type=click.File('r'))
 @click.argument('args', nargs=-1)
-def run(file, args):
+def run(json_ledger_file, file, args):
   """
   Run an orca workflow.
   """
+  ledger = None
+  if json_ledger_file:
+    ledger = JSONFileLedger(json_ledger_file)
+    
   config = OrcaConfig.create(file, args)
-  executor = ExecutionHandler()
+  executor = ExecutionHandler(ledger)
   executor.handle(config)
 
 
