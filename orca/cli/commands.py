@@ -6,6 +6,7 @@ from orca.core.handler import ExecutionHandler
 from orca.core.handler import ValidationHandler
 from orca.core.handler import DotfileHandler
 from orca.core.ledger import JSONFileLedger
+from orca.core.ledger import MongoLedger
 
 import logging
 import click
@@ -26,18 +27,34 @@ def version():
   """
   print(o.__version__)
     
+    
+    
+    
+# python3 orca run --ledger-json /tmp/f.json for.yaml
+# python3 orca run --ledger-mongo localhost/orcadb1/ledgercol for.yaml
+
+def check_format(ctx, param, value):
+  c = value.split('/')
+  if len(c) != 3:
+    log.error("Invalid mongo connect string, expected '<host[:port]>/<db>/<col>'")
+    ctx.exit()
+    
 @orca.command()
-@click.option('--json-ledger-file', type=click.Path())
+@click.option('--ledger-json', type=click.Path(), help='file ledger.')
+@click.option('--ledger-mongo', type=str, 
+              help='mongodb ledger, TEXT format "<host[:port]>/<db>/<col>".', callback=check_format)
 @click.argument('file', type=click.File('r'))
 @click.argument('args', nargs=-1)
-def run(json_ledger_file, file, args):
+def run(ledger_json, ledger_mongo, file, args):
   """
   Run an orca workflow.
   """
   ledger = None
-  if json_ledger_file:
-    ledger = JSONFileLedger(json_ledger_file)
-    
+  if ledger_json:
+    ledger = JSONFileLedger(ledger_json)
+  elif ledger_mongo:
+    ledger = MongoLedger(ledger_mongo)
+  
   config = OrcaConfig.create(file, args)
   executor = ExecutionHandler(ledger)
   executor.handle(config)

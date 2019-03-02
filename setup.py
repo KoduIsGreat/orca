@@ -14,6 +14,7 @@ setuptools.setup(
         "click-log == 0.3.2",
         "dotted == 0.1.8",
         "ruamel.yaml == 0.15.88",
+        "pymongo == 3.7.2",
     ],
     description="A cli tool for orchestrating model workflows",
     long_description=open('README.md').read(),
