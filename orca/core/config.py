@@ -13,7 +13,10 @@ task = DottedDict()
 var = DottedDict()
 
 
-class OrcaConfigException(Exception):
+class OrcaException(Exception):
+  pass
+
+class OrcaConfigException(OrcaException):
   pass
 
 

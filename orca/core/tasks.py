@@ -1,9 +1,9 @@
 from typing import Dict, List
 from dotted.collection import DottedCollection
-from orca.core.config import log
+from orca.core.config import log, OrcaException
 
 
-class OrcaTaskException(Exception):
+class OrcaTaskException(OrcaException):
   pass
 
 

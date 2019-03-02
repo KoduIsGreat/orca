@@ -34,6 +34,8 @@ def version():
 # python3 orca run --ledger-mongo localhost/orcadb1/ledgercol for.yaml
 
 def check_format(ctx, param, value):
+  if value is None:
+    return
   c = value.split('/')
   if len(c) != 3:
     log.error("Invalid mongo connect string, expected '<host[:port]>/<db>/<col>'")
@@ -49,15 +51,19 @@ def run(ledger_json, ledger_mongo, file, args):
   """
   Run an orca workflow.
   """
-  ledger = None
-  if ledger_json:
-    ledger = JSONFileLedger(ledger_json)
-  elif ledger_mongo:
-    ledger = MongoLedger(ledger_mongo)
-  
-  config = OrcaConfig.create(file, args)
-  executor = ExecutionHandler(ledger)
-  executor.handle(config)
+  try:
+    ledger = None
+    if ledger_json:
+      ledger = JSONFileLedger(ledger_json)
+    elif ledger_mongo:
+      ledger = MongoLedger(ledger_mongo)
+    
+    config = OrcaConfig.create(file, args)
+    executor = ExecutionHandler(ledger)
+    executor.handle(config)
+  except OrcaException as e:
+    log.error(e)
+
 
 
 @orca.command()
