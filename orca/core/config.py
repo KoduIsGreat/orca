@@ -2,9 +2,13 @@ import json
 import logging
 import re
 import os
+
 from typing import List, Dict, TextIO
 from ruamel import yaml
 from dotted.collection import DottedDict
+from jsonschema import validate
+from orca.core.schema import schema
+
 
 log = logging.getLogger(__name__)
 
@@ -30,7 +34,8 @@ class OrcaConfig(object):
       log.debug("Raw yaml: {0}".format(data))
       
       # first pass: start with a valid the yaml file.
-      yaml.load(data, Loader=yaml.Loader)
+      orig = yaml.load(data, Loader=yaml.Loader)
+      #validate(orig, schema)
       
       # processing single quote string literals: " ' '
       repl = r"^(?P<key>\s*[^#:]*):\s+(?P<value>['].*['])\s*$"
@@ -85,8 +90,8 @@ class OrcaConfig(object):
       try:
         exec("import " + dep, globals())
         log.debug("importing dependency: '{0}'".format(dep))
-      except OrcaConfigException as b:
-        log.error("Orca could not resolve the {0} dependency".format(dep))
+      except Exception as b:
+        raise OrcaConfigException("Cannot not resolve the '{0}' dependency".format(dep))
 
   def __set_vars(self, variables: Dict, args: List[str]) -> None:
     """put all variables as globals"""
@@ -98,4 +103,4 @@ class OrcaConfig(object):
         exec("var.{0}={1}".format(key,val))
         log.debug("  set var.{0} = {1} -> {2}".format(key, str(val), str(eval("var."+key))))
       except Exception as e:
-        raise e
+        raise OrcaConfigException("Cannot set variable: {0}".format(key))
