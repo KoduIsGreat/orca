@@ -5,7 +5,7 @@ import logging
 import pymongo
 
 from orca.core.tasks import OrcaTask
-from orca.core.config import OrcaConfig, OrcaConfigException, log
+from orca.core.config import OrcaConfig, log
 from typing import Dict, List
 from datetime import datetime
 
@@ -20,7 +20,7 @@ class Ledger(object):
 
   def add(self, task: OrcaTask, state:Dict) -> None:
     """Add an entry to the ledger"""
-    print("->> ledger: {0} {1} {2}".format(task.name, str(self._id), str(state)))
+#    print("->> ledger: {0} {1} {2}".format(task.name, str(self._id), str(state)))
     #pass
 
   def _create_entry(self, task: OrcaTask, state: Dict) -> Dict:
