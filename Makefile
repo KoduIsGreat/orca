@@ -17,7 +17,7 @@ uninstall:
 	pip3 uninstall -y orca
 
 clean:
-	rm -rf dist *.egg-info
+	rm -rf dist *.egg-info tests/fixtures/configs/.dot
 	
 demo:
 	python3 orca run -v comprehensive_example.yaml arg1 test 300
