@@ -12,8 +12,9 @@ from datetime import datetime
 class Ledger(object):
   """Keeps A record of workflow task executions transactions"""
 
-  # unique for each orca run
-  _id = uuid.uuid4()
+  def __init__(self):
+    # unique for each orca run
+    self._id = uuid.uuid4()
   
   def set_config(self, config: OrcaConfig):
     self.config = config
@@ -51,6 +52,7 @@ class JSONFileLedger(Ledger):
   """Creates a JSON File with a ledger, appends if file exists."""
   
   def __init__(self, file: str):
+    super().__init__()
     self.f = open(file, 'a+')
     log.debug('JSON Ledger: {0}'.format(self.f))
 
