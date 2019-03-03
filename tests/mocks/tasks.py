@@ -5,7 +5,7 @@ inline_python_inputs_mock = {
     'task': 'inline_python',
     'python': 'greeting = \'Hello {0}\'.format(name)',
     'inputs': {
-        'name': 'Adam'
+        'name': '"Adam"'
     },
     'outputs': [
         'greeting'

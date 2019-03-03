@@ -30,10 +30,10 @@ job:
     python: var.afile
     
   - if var.th < 20:
-    - task: last 
+    - task: last1 
       python: var.afile
   
-  - task: last
+  - task: last2
     python: var.afile
      
      

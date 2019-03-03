@@ -10,32 +10,32 @@ class OrcaHandlerTest(unittest.TestCase):
 
     def test_inline_inputs_python(self):
         mock = inline_python_inputs_mock
-        _task = OrcaTask(mock)
         h = ExecutionHandler()
+        _task = OrcaTask(mock, h.resolve_task_inputs(mock))
         output = h.handle_python(_task)
         assert _task.name+'.greeting' in output
         assert output[_task.name+'.greeting'] == 'Hello Adam'
 
     def test_inline_python(self):
         mock = inline_python_mock
-        _task = OrcaTask(mock)
         h = ExecutionHandler()
+        _task = OrcaTask(mock, h.resolve_task_inputs(mock))
         output = h.handle_python(_task)
         assert _task.name+'.greeting' in output
         assert output[_task.name+'.greeting'] == 'Hello World'
 
     def test_file_no_inputs_python(self):
         mock = file_python_mock
-        _task = OrcaTask(mock)
         h = ExecutionHandler()
+        _task = OrcaTask(mock, h.resolve_task_inputs(mock))
         output = h.handle_python(_task)
         assert _task.name+'.result' in output
         assert output[_task.name+'.result'] == 10
 
     def test_file_inputs_python(self):
         mock = file_python_inputs_mock
-        _task = OrcaTask(mock)
         h = ExecutionHandler()
+        _task = OrcaTask(mock, h.resolve_task_inputs(mock))
         output = h.handle_python(_task)
         assert _task.name+'.result' in output
         assert output[_task.name+'.result'] == 25

@@ -7,9 +7,9 @@ job:
   - task: hydraulics
     csip: http://csip.engr.colostate.edu:8088/csip-hydraulics/m/hydraulics/channelgeometry/1.0
     inputs:
-      depthType: user
+      depthType: 'user'
       depth: 5
-      crossSection: "x\ty\n0\t3250\n10\t3240\n41.4\t3242\n52.3\t3243\n61.8\t3248\n72\t3241\n84\t3239\n87\t3242\n95\t3248\n123\t3252"
+      crossSection: 'x y 10 3240 41.4 3242 52. 3243 61.8 3248 72 3241 84 3239 87 3242 95 3248 123 3252'
       irregularGeometry : false
       bottomWidth: 6.096
       sideSlope: 2
