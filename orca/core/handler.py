@@ -232,7 +232,7 @@ class ExecutionHandler(OrcaHandler):
 
   def _handle_task(self, task_dict: Dict) -> None:
     _task = super()._handle_task(task_dict)
-    self.ledger.add(_task, _task.task_locals)
+    self.ledger.add(_task)
 
   def handle_csip(self, task: OrcaTask) -> Dict:
     try:
@@ -293,11 +293,15 @@ class ExecutionHandler(OrcaHandler):
     
     resolved_file = self._resolve_file_path(_task.python, ".py")
     
-    if resolved_file is None:
-      exec(_task.python, _task.task_locals)
-    else:
-      with open(resolved_file, 'r') as script:
-        exec(script.read(), _task.task_locals)
+    try:
+      if resolved_file is None:
+        exec(_task.python, _task.task_locals)
+      else:
+        with open(resolved_file, 'r') as script:
+          exec(script.read(), _task.task_locals)
+      _task.status = "success"
+    except:
+      _task.status = "failed"
     
     # remove after execution
     del _task.task_locals['__builtins__']  

@@ -18,28 +18,30 @@ class Ledger(object):
   def set_config(self, config: OrcaConfig):
     self.config = config
 
-  def add(self, task: OrcaTask, state:Dict) -> None:
+  def add(self, task: OrcaTask) -> None:
     """Add an entry to the ledger"""
-#    print("->> ledger: {0} {1} {2}".format(task.name, str(self._id), str(state)))
-    #pass
+    #print("->> ledger: {0}".format(self._create_entry(task)))
+    pass
 
-  def _create_entry(self, task: OrcaTask, state: Dict) -> Dict:
+  def _create_entry(self, task: OrcaTask) -> Dict:
     """Create a dictionary entry to record in a ledger"""
     d = {
           'orca_file': os.path.abspath(self.config.get_yaml_file()), # the workflow file
           'orca_id': self.config.get_version(), # the 'version' entry in the workflow file
           'orca_name': self.config.get_name(), # the 'version' entry in the workflow file (e.g. gitattribute)
-          'run_uuid': str(self._id), # the uuid of the current run 
-          'run_time': str(datetime.now()), # task execution time
-          'task': task.name # the task name
+          'task_name': task.name, # the task name
+          'task_uuid': str(self._id), # the uuid of the current run 
+          'task_status': task.status, # status of the run
+          'task_time': str(datetime.now()), # task execution time
+          'task_data': task.task_locals, # task data
         }
-    d.update(state)  # task inputs/outputs
     if log.isEnabledFor(logging.DEBUG):
       log.debug('ledger: {0}'.format(d))
     return d
 
   def close(self) -> None:
     pass
+
 
 
 ############################################
@@ -53,8 +55,8 @@ class JSONFileLedger(Ledger):
     log.debug('JSON Ledger: {0}'.format(self.f))
 
   
-  def add(self, task: OrcaTask, state:Dict) -> None:
-    d = self._create_entry(task, state)
+  def add(self, task: OrcaTask) -> None:
+    d = self._create_entry(task)
     self.f.write('{0}\n'.format(d))
 
     
@@ -75,8 +77,8 @@ class MongoLedger(Ledger):
     log.debug('Mongo Ledger: {0} for {1}'.format(self.mongo, "/".join(con)))
 
   
-  def add(self, task: OrcaTask, state:Dict) -> None:
-    d = self._create_entry(task, state)
+  def add(self, task: OrcaTask) -> None:
+    d = self._create_entry(task)
     self.col.insert_one(d)
 
     

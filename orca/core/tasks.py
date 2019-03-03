@@ -11,6 +11,7 @@ class OrcaTask(object):
 
   def __init__(self, task_dict: Dict, task_locals: Dict):
     self.task_data = task_dict
+    self._status = 'unknown'
     self._task_locals = task_locals
 
   @property
@@ -54,3 +55,13 @@ class OrcaTask(object):
   @property
   def python(self) -> str:
     return self.task_data.get('python')
+
+  @property
+  def status(self) -> str:
+    return self._status
+  
+  @status.setter
+  def status(self, st:str):
+    self._status = st
+    
+    
