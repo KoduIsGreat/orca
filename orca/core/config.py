@@ -6,7 +6,8 @@ import os
 from typing import List, Dict, TextIO
 from ruamel import yaml
 from dotted.collection import DottedDict
-from jsonschema import validate
+from jsonschema import validate
+
 from orca.core.schema import schema
 
 
@@ -100,7 +101,7 @@ class OrcaConfig(object):
       if not key.isidentifier():
         raise OrcaConfigException('Invalid variable identifier: "{0}"'.format(key))
       try:
-        exec("var.{0}={1}".format(key,val))
+        exec("var.{0}={1}".format(key,val), locals(), globals())
         log.debug("  set var.{0} = {1} -> {2}".format(key, str(val), str(eval("var."+key))))
       except Exception as e:
         raise OrcaConfigException("Cannot set variable: {0}".format(key))

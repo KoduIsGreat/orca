@@ -35,10 +35,10 @@ def handle_csip_result(response: Dict, outputs: List, name: str) -> Dict:
       d[name + "." + k] = v['value']
   return d
 
-def handle_python_result(outputs: List, name: str)-> Dict:
+def handle_python_result(outputs: List, name: str, task_locals:Dict)-> Dict:
   d = {}
-  for v in outputs:
-    d[name + '.' + v] = eval(v, globals())
+  for out in outputs:
+    d[name + '.' + out] = task_locals[out]
   return d
 
 
@@ -48,9 +48,13 @@ def handle_python_result(outputs: List, name: str)-> Dict:
 class OrcaHandler(metaclass=ABCMeta):
   """ Abstract orca handler for control flow, variable resolution"""
   
-  symtable = {}
+  def __init__(self):
+    self.symtable = {}
   
   def _check_symtable(self, name:str, task:Dict):
+    if name is None or not name.isidentifier():
+      raise OrcaConfigException('Invalid task name: "{0}"'.format(name))
+
     task_id = id(task)
     if self.symtable.get(name, task_id) != task_id:
       raise OrcaConfigException("Duplicate task name: {0}".format(name))
@@ -115,22 +119,21 @@ class OrcaHandler(metaclass=ABCMeta):
     else:
       raise OrcaConfigException('Invalid task type: "{0}"'.format(task_dict))
             
-  def __resolve_task_inputs(self, task_dict: Dict) -> Dict:
+            
+  def resolve_task_inputs(self, task_dict: Dict) -> Dict:
     inputs = task_dict.get('inputs',{})
-    if inputs is not {}:
-      for k, v in inputs.items():
-        if str(v).startswith('task.') or str(v).startswith('var.'):
-          inputs[k] = eval(str(v), globals())
-    return task_dict
+    if inputs:
+       return {k: eval(str(v), globals()) for k, v in inputs.items()} 
+    return {}
 
-  def __resolve_task(self, task_dict: Dict) -> Dict:
-    for k, v in task_dict.items():
-      if str(v).startswith('var.'):
-        task_dict[k] = eval(str(v), globals())
-    return self.__resolve_task_inputs(task_dict)
-      
+
   def _resolve_file_path(self, name: str, ext:str) -> str:
     """ resolve the full qualified path name"""
+    try:
+      name = eval(str(name), globals())
+    except:
+      pass
+    
     if os.path.isfile(name):
       return name
     else:
@@ -148,21 +151,32 @@ class OrcaHandler(metaclass=ABCMeta):
           raise OrcaConfigException('File not found: "{0}"'.format(name))
         return None
 
+
   def _handle_task(self, task_dict: Dict) -> OrcaTask:
     name = task_dict.get('task', None)
-    if name is None or not name.isidentifier():
-      raise OrcaConfigException('Invalid task name: "{0}"'.format(name))
-    self._check_symtable(name, task_dict)
     
+    # check the symbol table for task name to be an unique and valid name
+    self._check_symtable(name, task_dict)
+
+    # task locals are the resolved inputs, they will be used for 
+    # execution
+    task_locals = self.resolve_task_inputs(task_dict)
+    _task = OrcaTask(task_dict, task_locals)
+    
+    log.debug(" task '{0}' locals: {1}".format(_task.name, task_locals))
+    
+    # select the handler and call handle
     handle = self.__select_handler(task_dict)
-    resolved_task = self.__resolve_task(task_dict.copy())
-    _task = OrcaTask(resolved_task)
     result = handle(_task)
-    if isinstance(result, dict):
-      for k, v in result.items():
-        task[k] = v
-    elif isinstance(result, str):
-      log.debug(result)
+    
+    log.debug(" task '{0}' locals: {1}".format(_task.name, task_locals))
+
+    # put the tasl_locals into the global task dictonary
+    # this includes input and outputs
+    task[_task.name] = {}
+    for k, v in task_locals.items():
+      task[_task.name][k] = v
+      
     return _task
 
   # control structures
@@ -207,6 +221,7 @@ class ExecutionHandler(OrcaHandler):
   """Execution Handler, executes csip, bash, python, http"""
   
   def __init__(self, ledger: Ledger = None):
+    super().__init__()
     self.ledger = ledger or Ledger()
     
   def handle(self, config: OrcaConfig) -> None:
@@ -219,8 +234,7 @@ class ExecutionHandler(OrcaHandler):
 
   def _handle_task(self, task_dict: Dict) -> None:
     _task = super()._handle_task(task_dict)
-    self.ledger.add(_task, task[_task.name])
-
+    self.ledger.add(_task, _task.task_locals)
 
   def handle_csip(self, task: OrcaTask) -> Dict:
     try:
@@ -278,30 +292,28 @@ class ExecutionHandler(OrcaHandler):
 
   def handle_python(self, _task: OrcaTask) -> Dict:
     log.debug("  exec python file : " + _task.python)
-    for k, v in _task.inputs.items():
-      if isinstance(v, str):
-        v = "\'{0}\'".format(v)
-      fmt = '{0} = {1}'.format(k, v)
-      exec(fmt, locals(), globals())
-    
-    task[_task.name] = {}
-    for k, v in _task.inputs.items():
-      task[_task.name][k] = v
     
     resolved_file = self._resolve_file_path(_task.python, ".py")
     
     if resolved_file is None:
-      exec(_task.python, globals())
+      exec(_task.python, _task.task_locals)
     else:
       with open(resolved_file, 'r') as script:
-        exec(script.read(), globals())
-    return handle_python_result(_task.outputs, _task.name)
+        exec(script.read(), _task.task_locals)
+    
+    # remove after execution
+    del _task.task_locals['__builtins__']  
+
+    return handle_python_result(_task.outputs, _task.name, _task.task_locals)
       
       
 #############################################
 
 class ValidationHandler(OrcaHandler):
   """ValidationHandler, no execution"""
+
+  def __init__(self):
+    super().__init__()
   
   def handle_csip(self, task: OrcaTask) -> Dict:
     r = requests.head(task.csip)
@@ -324,6 +336,9 @@ class ValidationHandler(OrcaHandler):
 
 class NoneHandler(OrcaHandler):
   """Handler that does not do anything, useful for testing"""
+
+  def __init__(self):
+    super().__init__()
   
   def handle_csip(self, task: OrcaTask)  -> Dict:
     pass
@@ -342,6 +357,9 @@ class NoneHandler(OrcaHandler):
 
 class DotfileHandler(OrcaHandler):
   """Handles printing of a dot file"""
+
+  def __init__(self):
+    super().__init__()
       
   def handle(self, config: OrcaConfig) -> None:
     self.config = config

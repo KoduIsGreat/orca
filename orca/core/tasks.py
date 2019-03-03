@@ -9,8 +9,9 @@ class OrcaTaskException(OrcaException):
 
 class OrcaTask(object):
 
-  def __init__(self, task_dict: Dict):
+  def __init__(self, task_dict: Dict, task_locals: Dict):
     self.task_data = task_dict
+    self._task_locals = task_locals
 
   @property
   def name(self) -> str:
@@ -19,6 +20,10 @@ class OrcaTask(object):
     except KeyError as e:
       raise OrcaTaskException("Missing Task Identifier: ", e)
 
+  @property
+  def task_locals(self) -> Dict:
+    return self._task_locals
+    
   @property
   def inputs(self) -> Dict:
     return self.task_data.get('inputs', {})
