@@ -1,7 +1,6 @@
 
 import orca as o   # must be renamed
-from orca.core.config import OrcaConfig
-from orca.core.config import log
+from orca.core.config import OrcaConfig, OrcaException, log
 from orca.core.handler import ExecutionHandler
 from orca.core.handler import ValidationHandler
 from orca.core.handler import DotfileHandler
@@ -30,8 +29,6 @@ def version():
     
     
     
-# python3 orca run --ledger-json /tmp/f.json for.yaml
-# python3 orca run --ledger-mongo localhost/orcadb1/ledgercol for.yaml
 
 def check_format(ctx, param, value):
   if value is None:
@@ -40,7 +37,16 @@ def check_format(ctx, param, value):
   if len(c) != 3:
     log.error("Invalid mongo connect string, expected '<host[:port]>/<db>/<col>'")
     ctx.exit()
-    
+  return c
+
+
+# run a workflow:    
+# python3 orca run --ledger-json /tmp/f.json for.yaml
+# python3 orca run --ledger-mongo localhost/orcadb1/ledgercol for.yaml
+#
+# maybe import file into a db:
+# mongoimport --db orca --collection ledger --file /tmp/f.json
+
 @orca.command()
 @click.option('--ledger-json', type=click.Path(), help='file ledger.')
 @click.option('--ledger-mongo', type=str, 
@@ -52,6 +58,7 @@ def run(ledger_json, ledger_mongo, file, args):
   Run an orca workflow.
   """
   try:
+
     ledger = None
     if ledger_json:
       ledger = JSONFileLedger(ledger_json)
@@ -73,9 +80,12 @@ def validate(file, args):
   """
   Validate an orca workflow.
   """
-  config = OrcaConfig.create(file, args)
-  validator = ValidationHandler()
-  validator.handle(config)
+  try:
+    config = OrcaConfig.create(file, args)
+    validator = ValidationHandler()
+    validator.handle(config)
+  except OrcaException as e:
+    log.error(e)
 
 
 # Create a visual workflow:
@@ -85,7 +95,6 @@ def validate(file, args):
 #    $ dot -Tpdf switch.dot -o switch.pdf
 #    $ dot -Tpng switch.dot -o switch.png
 #    $ dot -Tsvg switch.dot -o switch.svg
-
 @orca.command()
 @click.argument('file', type=click.File('r'))
 @click.argument('args', nargs=-1)
@@ -93,7 +102,10 @@ def todot(file, args):
   """
   Create a graphviz dot file from an orca workflow. 
   """
-  config = OrcaConfig.create(file, args)
-  printer = DotfileHandler()
-  printer.handle(config)
+  try:
+    config = OrcaConfig.create(file, args)
+    printer = DotfileHandler()
+    printer.handle(config)
+  except OrcaException as e:
+    log.error(e)
 
