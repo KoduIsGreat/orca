@@ -1,11 +1,9 @@
 import os
-import sys
-import requests
 import subprocess as subp
 import requests
 
 from csip import Client
-from typing import List, Dict, TextIO
+from typing import List, Dict
 from orca.core.tasks import OrcaTask
 from orca.core.config import var, task, log, OrcaConfig, OrcaConfigException
 from orca.core.ledger import Ledger
@@ -219,7 +217,7 @@ class ExecutionHandler(OrcaHandler):
 
   def _handle_task(self, task_dict: Dict) -> None:
     _task = super()._handle_task(task_dict)
-    self.ledger.add(_task, task[_task.name])
+    self.ledger.add(_task, task[_task.name].to_python())
 
 
   def handle_csip(self, task: OrcaTask) -> Dict:
@@ -234,7 +232,7 @@ class ExecutionHandler(OrcaHandler):
       client = client.execute(task.csip)
       return handle_csip_result(client.data, outputs, task.name)
     except requests.exceptions.HTTPError as e:
-      raise OrcaTaskException(e)
+      raise OrcaConfigException(e)
       
       
   def handle_http(self, task: OrcaTask) -> Dict:

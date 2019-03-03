@@ -5,7 +5,7 @@ import logging
 import pymongo
 
 from orca.core.tasks import OrcaTask
-from orca.core.config import OrcaConfig, OrcaConfigException, log
+from orca.core.config import OrcaConfig, log
 from typing import Dict, List
 from datetime import datetime
 

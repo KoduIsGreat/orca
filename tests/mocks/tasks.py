@@ -39,3 +39,11 @@ file_python_mock = {
         'result'
     ]
 }
+
+bad_file_path_python = {
+    'task': 'file_python',
+    'python': os.path.join(test_dir, 'fixtures', 'does_not_exist.py'),
+    'outputs': [
+        'result'
+    ]
+}
