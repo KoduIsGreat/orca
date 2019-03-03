@@ -384,8 +384,8 @@ class DotfileHandler(OrcaHandler):
       
   def _handle_fork(self, sequences:Dict) -> None:
     """Handle parallel execution"""
-    name = "fork_" + str(self.idx) 
-    term = "term_" + str(self.idx) 
+    name = "fork_{0}".format(self.idx) 
+    term = "term_{0}".format(self.idx) 
     self.idx += 1
     if self.decl:
       self.dot.append('{0} [shape=house,fillcolor=cornsilk,fontcolor="dodgerblue3",label="FORK"]'.format(name))
@@ -404,8 +404,8 @@ class DotfileHandler(OrcaHandler):
         
   def _handle_for(self, sequence:Dict, var_expr:str) -> None:
     """Handle Looping"""
-    name = "for_" + str(self.idx) 
-    term = "term_" + str(self.idx) 
+    name = "for_{0}".format(self.idx) 
+    term = "term_{0}".format(self.idx) 
     self.idx += 1
     if self.decl:
       self.dot.append('{0} [shape=trapezium,fillcolor=cornsilk,fontcolor="dodgerblue3",label="FOR\\n{1}"]'.format(name, var_expr))
@@ -422,8 +422,8 @@ class DotfileHandler(OrcaHandler):
 
   def _handle_switch(self, sequence:Dict, cond:str) -> None:
     """Handle conditional switch."""
-    name = "switch_" + str(self.idx) 
-    term = "term_" + str(self.idx) 
+    name = "switch_{0}".format(self.idx) 
+    term = "term_{0}".format(self.idx) 
     self.idx += 1
     if self.decl:
       self.dot.append('{0} [shape=diamond,fillcolor=cornsilk,fontcolor="dodgerblue3",label="SWITCH\\n{1}"]'.format(name,cond))
@@ -443,8 +443,8 @@ class DotfileHandler(OrcaHandler):
 
   def _handle_if(self, sequence:Dict, cond:str) -> None:
     """Handle if."""
-    name = "if_" + str(self.idx) 
-    term = "term_" + str(self.idx) 
+    name = "if_{0}".format(self.idx) 
+    term = "term_{0}".format(self.idx) 
     self.idx += 1
     if self.decl:
       self.dot.append('{0} [shape=diamond,fillcolor=cornsilk,fontcolor="dodgerblue3",label="IF\\n{1}"]'.format(name, cond))
