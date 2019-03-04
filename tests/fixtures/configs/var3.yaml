@@ -1,0 +1,15 @@
+# access loop variable 
+
+apiversion: orca/'1.0'
+
+version: '0.1'
+
+job:
+  - for v, range(1, 10): 
+    - task: ex
+      python: |
+            assert count >=1 and count <10, "invalid counter {0}".format(count)
+      inputs:
+        count: v
+        
+    
