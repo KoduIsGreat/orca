@@ -7,7 +7,6 @@ setuptools.setup(
     author="Adam Shelton, Olaf David",
     author_email="",
     install_requires=[
-        "requests == 2.21.0",
         "csip ==  0.8.13",
         "jsonschema == 2.0",
         "click == 7.0",
@@ -15,6 +14,7 @@ setuptools.setup(
         "dotted == 0.1.8",
         "ruamel.yaml == 0.15.88",
         "pymongo == 3.7.2",
+        "requests == 2.21.0"
     ],
     description="A cli tool for orchestrating model workflows",
     long_description=open('README.md').read(),
