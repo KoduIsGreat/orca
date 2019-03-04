@@ -23,7 +23,7 @@ inline_python_mock = {
 
 file_python_inputs_mock = {
     'task': 'file_python',
-    'python': os.path.join(test_dir, 'fixtures', 'test_inputs.py'),
+    'python': os.path.join(test_dir, 'fixtures', 'inputs.py'),
     'inputs': {
         'input_1': 10,
         'input_2': 15
@@ -35,7 +35,7 @@ file_python_inputs_mock = {
 
 file_python_mock = {
     'task': 'file_python',
-    'python': os.path.join(test_dir, 'fixtures', 'test_no_inputs.py'),
+    'python': os.path.join(test_dir, 'fixtures', 'no_inputs.py'),
     'outputs': [
         'result'
     ]

@@ -44,8 +44,8 @@ class OrcaExecutionTest(unittest.TestCase):
     def test_var3_task(self):
         run_workflow('var3.yaml')
 
-    def test_var4_task(self):
-        run_workflow('var4.yaml')
+    # def test_var4_task(self):
+    #     run_workflow('var4.yaml')
 
 
 if __name__ == '__main__':

@@ -6,7 +6,6 @@ from orca.core.config import OrcaConfigException
 
 
 class OrcaHandlerTest(unittest.TestCase):
-    pass
 
     def test_inline_inputs_python(self):
         mock = tasks.inline_python_inputs_mock
