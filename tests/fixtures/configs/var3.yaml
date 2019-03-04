@@ -19,9 +19,9 @@ job:
   - for v, var.list: 
     - task: ex1
       python: |
-            assert isinstance(count, str), "Not str"
-            assert count in ['a','b','c'], "invalid counter {0}".format(count)
+            assert isinstance(item, str), "Not str"
+            assert item in ['a','b','c'], "invalid counter {0}".format(item)
       inputs:
-        count: v
+        item: v
         
     
