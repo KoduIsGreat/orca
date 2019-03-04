@@ -19,34 +19,32 @@ steps:
     inputs:
       versionSpec: '$(python.version)'
       architecture: 'x64'
-  - script: python -m pip install --upgrade pip setuptools wheel
+  - script: python -m pip install --upgrade pip setuptools wheel flake8 pytest pytest-cov
     displayName: 'install setup tools'
+
+  - script: python setup.py install
+    displayName: 'install dependencies'
 
   - script: python setup.py sdist
     displayName: 'build package'
 
-  - script: |
-    python -m pip install flake8
-    flake 8 .
-  displayName: 'Run linter'
+  - script: flake8 .
+    displayName: 'Run linter'
 
-  - script: |
-    pip install pytest
-    pip install pytest-cov
-    pytest tests --doctest-modules --junitxml=junit/test-results.xml --cov=com --cov-report=xml --cov-report=html
-  displayName: 'Test with pytest'
+  - script: pytest tests --doctest-modules --junitxml=junit/test-results.xml --cov=com --cov-report=xml --cov-report=html
+    displayName: 'Test with pytest'
 
   - task: PublishTestResults@2
-  condition: succeededOrFailed()
-  inputs:
-    testResultsFiles: '**/test-*.xml'
-    testRunTitle: 'Publish test results for Python $(python.version)'
+    condition: succeededOrFailed()
+    inputs:
+      testResultsFiles: '**/test-*.xml'
+      testRunTitle: 'Publish test results for Python $(python.version)'
 
   - task: PublishCodeCoverageResults@1
-  inputs:
-    codeCoverageTool: Cobertura
-    summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/coverage.xml'
-    reportDirectory: '$(System.DefaultWorkingDirectory)/**/htmlcov'
+    inputs:
+      codeCoverageTool: Cobertura
+      summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/coverage.xml'
+      reportDirectory: '$(System.DefaultWorkingDirectory)/**/htmlcov'
 # - script: |
 #     twine upload -r pypi -p $(password) dist/orca-version.tar.gz
 #   displayName: publish package
