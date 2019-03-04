@@ -136,14 +136,14 @@ class OrcaHandler(metaclass=ABCMeta):
 
   def _resolve_file_path(self, name: str, ext:str) -> str:
     """ resolve the full qualified path name"""
-    
+
     # potential value resolution if this should be a file name
     try:
       name = eval(str(name), globals())
     except:
       # ok, never mind
       pass
-    
+ 
     if os.path.isfile(name):
       return name
     else:
@@ -219,7 +219,10 @@ class OrcaHandler(metaclass=ABCMeta):
     expr = var_expr[i+1:]
     for i in eval(expr, globals()):
       # mapping loop variable 'i' to 'var'
-      exec("{0}={1}".format(var,i), globals())
+      q = ''
+      if isinstance(i, str):
+        q = "'"
+      exec("{0}={2}{1}{2}".format(var,i,q), globals())
       self._handle_sequence(sequence)
 
 
