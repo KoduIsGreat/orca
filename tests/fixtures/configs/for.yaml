@@ -18,20 +18,10 @@ job:
             excitement_level = ''
             for i in range(1, excited):
                 excitement_level += '!'
-            print('Hello {0}{1}'.format(name, excitement_level))
+            #print('Hello {0}{1}'.format(name, excitement_level))
       inputs:
         excited: var.counter
         name: var.greetTo
-        
-#  - for d, pandas.date_range(start='1/1/2018', end='1/08/2018', freq='D'):
-#    - task: start2
-#      bash: |
-#            echo "Running the forecast at '$DATE'"
-#            echo "..."
-#            sleep 1
-#
-#      inputs:
-#        DATE: d
         
   - task: last 
     python: 'a.py'
