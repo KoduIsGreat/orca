@@ -31,14 +31,20 @@ def handle_csip_result(response: Dict, outputs: List, name: str) -> Dict:
   d = {}
   for k,v in response.items():
     if k in outputs:
-      d[name + "." + k] = v['value']
+      try:
+        d[name + "." + k] = v['value']
+      except KeyError as e:
+        raise OrcaConfigException("Output not found: {0}".format(k))
   return d
 
 
 def handle_python_result(outputs: List, name: str, task_locals:Dict)-> Dict:
   d = {}
   for out in outputs:
-    d[name + '.' + out] = task_locals[out]
+    try:
+      d[name + '.' + out] = task_locals[out]
+    except KeyError as e:
+      raise OrcaConfigException("Task output not found: {0}".format(out))
   return d
 
 
@@ -248,44 +254,44 @@ class ExecutionHandler(OrcaHandler):
     _task = super()._handle_task(task_dict)
     self.ledger.add(_task)
 
-  def handle_csip(self, task: OrcaTask) -> Dict:
+  def handle_csip(self, _task: OrcaTask) -> Dict:
     try:
       client = Client()
-      for key, value in task.locals.items():
+      for key, value in _task.locals.items():
         if isinstance(value, DottedCollection):
           client.add_data(key, value.to_python())
         else:
           client.add_data(key, value)
-      client = client.execute(task.csip)
-      return handle_csip_result(client.data, task.outputs, task.name)
+      client = client.execute(_task.csip)
+      return handle_csip_result(client.data, _task.outputs, _task.name)
     except requests.exceptions.HTTPError as e:
       raise OrcaConfigException(e)
       
       
-  def handle_http(self, task: OrcaTask) -> Dict:
-    url = task.http
-    name = task.name
-    inputs = task.locals
-    if 'method' not in task.config:
+  def handle_http(self, _task: OrcaTask) -> Dict:
+    url = _task.http
+    name = _task.name
+    inputs = _task.locals
+    if 'method' not in _task.config:
       raise OrcaConfigException("requests service operator must include method: service {0}".format(name))
-    if task.config['method'] == 'GET':
-      return handle_service_result(requests.get(url, params=task.config['params']).content, name)
-    elif task.config['method'] == 'POST':
+    if _task.config['method'] == 'GET':
+      return handle_service_result(requests.get(url, params=_task.config['params']).content, name)
+    elif _task.config['method'] == 'POST':
       if isinstance(inputs, DottedCollection):
         return handle_service_result(requests.post(url, inputs.to_python()).content, name)
       else:
         return handle_service_result(requests.post(url, inputs).content, name)
 
 
-  def handle_bash(self, task: OrcaTask) -> Dict:
+  def handle_bash(self, _task: OrcaTask) -> Dict:
     env = {}
-    config = task.config
+    config = _task.config
     # get defaults
     delimiter = config.get('delimiter', '\n')
     wd = config.get('wd', None)
-    if len(task.inputs) > 0:
-      env = values_tostr(task.inputs)
-    sp = subp.Popen(task.bash, env=env, shell=True, stdout=subp.PIPE, stderr=subp.PIPE, cwd=wd)
+    if len(_task.locals) > 0:
+      env = values_tostr(_task.locals)
+    sp = subp.Popen(_task.bash, env=env, shell=True, stdout=subp.PIPE, stderr=subp.PIPE, cwd=wd)
     out, err = sp.communicate()
     if sp.returncode != 0:
       log.error('return code: {0}'.format(sp.returncode))
@@ -493,6 +499,7 @@ class DotfileHandler(OrcaHandler):
       self.dot.append('{0} -> {1} {2}'.format(self.last_task, name , self.last_vertex_label))
       self.last_vertex_label = ''
       self.last_task = name
+        
         
   def handle_csip(self, task: OrcaTask):
     self._ht(task.name, 'cds', task.csip)
