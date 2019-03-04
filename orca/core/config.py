@@ -6,9 +6,6 @@ import os
 from typing import List, Dict, TextIO
 from ruamel import yaml
 from dotted.collection import DottedDict
-from jsonschema import validate
-from orca.core.schema import schema
-
 
 log = logging.getLogger(__name__)
 
@@ -37,8 +34,10 @@ class OrcaConfig(object):
             log.debug("Raw yaml: {0}".format(data))
 
             # first pass: start with a valid the yaml file.
+
+            # NOQA
             orig = yaml.load(data, Loader=yaml.Loader)
-            #validate(orig, schema)
+            # validate(orig, schema)
 
             # processing single quote string literals: " ' '
             repl = r"^(?P<key>\s*[^#:]*):\s+(?P<value>['].*['])\s*$"
@@ -49,7 +48,7 @@ class OrcaConfig(object):
             # second pass: do it.
             config = yaml.load(fixed_data, Loader=yaml.Loader)
 
-            if log.isEnabledFor(logging.DEBUG):   # to avoid always dump json
+            if log.isEnabledFor(logging.DEBUG):  # to avoid always dump json
                 log.debug("Loaded yaml: {0}".format(
                     json.dumps(config, indent=2)))
 
@@ -109,7 +108,7 @@ class OrcaConfig(object):
             try:
                 exec("var.{0}={1}".format(key, val), locals(), globals())
                 log.debug(
-                    "  set var.{0} = {1} -> {2}".format(key, str(val), str(eval("var."+key))))
+                    "  set var.{0} = {1} -> {2}".format(key, str(val), str(eval("var." + key))))
             except Exception as e:
                 raise OrcaConfigException(
                     "Cannot set variable: {0}".format(key))

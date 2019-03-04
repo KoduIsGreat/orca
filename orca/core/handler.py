@@ -5,13 +5,13 @@ import requests
 from csip import Client
 from typing import List, Dict
 from orca.core.tasks import OrcaTask
-from orca.core.config import var, task, log, OrcaConfig, OrcaConfigException
+from orca.core.config import task, log, OrcaConfig, OrcaConfigException
 from orca.core.ledger import Ledger
 from concurrent.futures import ThreadPoolExecutor
 from dotted.collection import DottedCollection
 from abc import ABCMeta, abstractmethod
 
-
+from orca.core.config import var  # noqa: F401
 # some global utility functions
 
 def values_tostr(d: Dict) -> Dict:
@@ -34,7 +34,7 @@ def handle_csip_result(response: Dict, outputs: List, name: str) -> Dict:
             try:
                 d[name + "." + k] = v['value']
             except KeyError as e:
-                raise OrcaConfigException("Output not found: {0}".format(k))
+                raise OrcaConfigException("Output not found: {0}".format(k), e)
     return d
 
 
@@ -44,7 +44,7 @@ def handle_python_result(outputs: List, name: str, task_locals: Dict) -> Dict:
         try:
             d[name + '.' + out] = task_locals[out]
         except KeyError as e:
-            raise OrcaConfigException("Task output not found: {0}".format(out))
+            raise OrcaConfigException("Task output not found: {0}".format(out), e)
     return d
 
 
@@ -137,9 +137,9 @@ class OrcaHandler(metaclass=ABCMeta):
         # potential value resolution if this should be a file name
         try:
             name = eval(str(name), globals())
-        except:
+        except Exception as e:
             # ok, never mind
-            pass
+            log.debug(e)
 
         if os.path.isfile(name):
             return name
@@ -213,7 +213,7 @@ class OrcaHandler(metaclass=ABCMeta):
             raise OrcaConfigException(
                 'Not a valid identifier: "{0}"'.format(var))
 
-        expr = var_expr[i+1:]
+        expr = var_expr[i + 1:]
         for i in eval(expr, globals()):
             # mapping loop variable 'i' to 'var'
             q = ''
@@ -430,7 +430,8 @@ class DotfileHandler(OrcaHandler):
         self.idx += 1
         if self.decl:
             self.dot.append(
-                '{0} [shape=trapezium,fillcolor=cornsilk,fontcolor="dodgerblue3",label="FOR\\n{1}"]'.format(name, var_expr))
+                '{0} [shape=trapezium,fillcolor=cornsilk,fontcolor="dodgerblue3",label="FOR\\n{1}"]'.format(name,
+                                                                                                            var_expr))
             self.dot.append('{0} [shape=point]'.format(term))
             self._handle_sequence(sequence)
         else:
@@ -450,7 +451,8 @@ class DotfileHandler(OrcaHandler):
         self.idx += 1
         if self.decl:
             self.dot.append(
-                '{0} [shape=diamond,fillcolor=cornsilk,fontcolor="dodgerblue3",label="SWITCH\\n{1}"]'.format(name, cond))
+                '{0} [shape=diamond,fillcolor=cornsilk,fontcolor="dodgerblue3",label="SWITCH\\n{1}"]'.format(name,
+                                                                                                             cond))
             self.dot.append('{0} [shape=point]'.format(term))
             for case, seq in sequence.items():
                 self._handle_sequence(seq)

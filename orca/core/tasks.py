@@ -1,6 +1,5 @@
 from typing import Dict, List
-from dotted.collection import DottedCollection
-from orca.core.config import log, OrcaException
+from orca.core.config import OrcaException
 
 
 class OrcaTaskException(OrcaException):

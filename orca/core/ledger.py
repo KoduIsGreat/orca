@@ -1,4 +1,3 @@
-
 import uuid
 import os
 import logging
@@ -22,7 +21,7 @@ class Ledger(object):
 
     def add(self, task: OrcaTask) -> None:
         """Add an entry to the ledger"""
-        #print("->> ledger: {0}".format(self._create_entry(task)))
+        # print("->> ledger: {0}".format(self._create_entry(task)))
         pass
 
     def _create_entry(self, task: OrcaTask) -> Dict:
@@ -38,7 +37,7 @@ class Ledger(object):
             'task_uuid': str(self._id),  # the uuid of the current run
             'task_status': task.status,  # status of the run
             'task_time': str(datetime.now()),  # task execution time
-            'task_data': task.task_locals,  # task data
+            'task_data': task.locals,  # task data
         }
         if log.isEnabledFor(logging.DEBUG):
             log.debug('ledger: {0}'.format(d))

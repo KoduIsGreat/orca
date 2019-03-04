@@ -32,7 +32,7 @@ steps:
     displayName: 'Run linter'
 
   - script: python -m unittest tests/*_test.py
-    displayName: 'Test with pytest'
+    displayName: 'Run Unit tests'
 
 #  - task: PublishTestResults@2
 #    condition: succeededOrFailed()

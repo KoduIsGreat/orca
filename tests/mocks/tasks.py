@@ -1,4 +1,5 @@
 import os
+
 test_dir = os.path.dirname(os.path.dirname(__file__))
 os.path.join(test_dir, 'fixtures', 'a.py')
 inline_python_inputs_mock = {
