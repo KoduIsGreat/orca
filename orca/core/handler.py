@@ -319,8 +319,10 @@ class ExecutionHandler(OrcaHandler):
         with open(resolved_file, 'r') as script:
           exec(script.read(), _task.locals)
       _task.status = "success"
-    except:
+    except BaseException as e:
       _task.status = "failed"
+      log.debug(str(e))
+      raise
     
     # remove after execution
     del _task.locals['__builtins__']  

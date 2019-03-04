@@ -49,4 +49,7 @@ class OrcaConfigTest(unittest.TestCase):
     def test_print_par_task(self):
         print_workflow('par.yaml')
 
+    def test_seq1_task(self):
+        run_workflow('seq-1.yaml')
+
 if __name__ == '__main__': unittest.main()
