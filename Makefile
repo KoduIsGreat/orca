@@ -27,3 +27,7 @@ run:
 	
 test:
 	python3 -m unittest tests/*_test.py
+	
+format:
+	find . -name '*.py' -exec autopep8 --in-place '{}' \;
+
