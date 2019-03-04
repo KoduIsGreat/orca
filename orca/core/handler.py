@@ -460,7 +460,7 @@ class DotfileHandler(OrcaHandler):
         self.last_task = name
         self.last_vertex_label = '[label="{0}"]'.format(case)
         self._handle_sequence(seq)
-        self.dot.append(self.last_task + ' -> ' + term )
+        self.dot.append('{0} -> {1}'.format(self.last_task,term))
       self.last_task = term
 
 
