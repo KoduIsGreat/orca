@@ -219,7 +219,7 @@ class OrcaHandler(metaclass=ABCMeta):
     expr = var_expr[i+1:]
     for i in eval(expr, globals()):
       # mapping loop variable 'i' to 'var'
-      exec("{0}='{1}'".format(var,i), globals())
+      exec("{0}={1}".format(var,i), globals())
       self._handle_sequence(sequence)
 
 
