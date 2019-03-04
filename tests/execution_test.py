@@ -23,9 +23,6 @@ class OrcaExecutionTest(unittest.TestCase):
     def test_csip_task(self):
         run_workflow('csip.yaml')
 
-    def test_python_task(self):
-        run_workflow('python.yaml')
-
     def test_fork_task(self):
         run_workflow('par.yaml')
 
@@ -43,5 +40,8 @@ class OrcaExecutionTest(unittest.TestCase):
 
     def test_var3_task(self):
         run_workflow('var3.yaml')
+
+    def test_var4_task(self):
+        run_workflow('var4.yaml')
 
 if __name__ == '__main__': unittest.main()
