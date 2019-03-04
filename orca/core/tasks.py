@@ -22,7 +22,7 @@ class OrcaTask(object):
       raise OrcaTaskException("Missing Task Identifier: ", e)
 
   @property
-  def task_locals(self) -> Dict:
+  def locals(self) -> Dict:
     """The resolved inputs and generated ouputs"""
     return self._task_locals
     

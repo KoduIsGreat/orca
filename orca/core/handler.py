@@ -251,7 +251,7 @@ class ExecutionHandler(OrcaHandler):
   def handle_csip(self, task: OrcaTask) -> Dict:
     try:
       client = Client()
-      for key, value in task.task_locals.items():
+      for key, value in task.locals.items():
         if isinstance(value, DottedCollection):
           client.add_data(key, value.to_python())
         else:
@@ -265,7 +265,7 @@ class ExecutionHandler(OrcaHandler):
   def handle_http(self, task: OrcaTask) -> Dict:
     url = task.http
     name = task.name
-    inputs = task.task_locals
+    inputs = task.locals
     if 'method' not in task.config:
       raise OrcaConfigException("requests service operator must include method: service {0}".format(name))
     if task.config['method'] == 'GET':
@@ -308,18 +308,18 @@ class ExecutionHandler(OrcaHandler):
     
     try:
       if resolved_file is None:
-        exec(_task.python, _task.task_locals)
+        exec(_task.python, _task.locals)
       else:
         with open(resolved_file, 'r') as script:
-          exec(script.read(), _task.task_locals)
+          exec(script.read(), _task.locals)
       _task.status = "success"
     except:
       _task.status = "failed"
     
     # remove after execution
-    del _task.task_locals['__builtins__']  
+    del _task.locals['__builtins__']  
 
-    return handle_python_result(_task.outputs, _task.name, _task.task_locals)
+    return handle_python_result(_task.outputs, _task.name, _task.locals)
       
       
 #############################################
