@@ -1,0 +1,19 @@
+# test variable declaration in vars
+
+apiversion: orca/'1.0'
+
+version: '0.1'
+
+var:
+  a: 'crazy'
+  b: 10
+  
+job:
+  - task: example
+    python: |
+        assert inp_b == 10, "expected 10, got {0}".format(inp_b)
+        assert inp_a == 'crazy', "expected crazy, got {0}".format(inp_a)
+    inputs:
+      inp_b: var.b
+      inp_a: var.a
+    
