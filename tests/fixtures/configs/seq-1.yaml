@@ -1,0 +1,13 @@
+apiversion: orca/'1.0'
+
+version: '0.1'
+
+job:
+  - task: hydraulics
+    python: |
+        assert inp == 0.025, "invalid inp {0}".format(inp)
+        assert inp1 == 'st', "invalid st {0}".format(inp1)
+    inputs:
+      inp: 0.025
+      inp1: 'st'
+    
