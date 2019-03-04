@@ -23,22 +23,22 @@ class OrcaTask(object):
 
   @property
   def task_locals(self) -> Dict:
+    """The resolved inputs and generated ouputs"""
     return self._task_locals
     
   @property
   def inputs(self) -> Dict:
+    """The inputs as found in the yaml file"""
     return self.task_data.get('inputs', {})
 
   @property
   def outputs(self) -> List:
+    """The outputs as found in the yaml file"""
     return self.task_data.get('outputs', [])
 
   @property
   def config(self) -> Dict:
-    try:
       return self.task_data.get('config', {})
-    except KeyError as e:
-      raise OrcaTaskException("Missing required config: ", e)
 
   @property
   def csip(self) -> str:

@@ -16,7 +16,7 @@ class Ledger(object):
     # unique for each orca run
     self._id = uuid.uuid4()
   
-  def set_config(self, config: OrcaConfig):
+  def set_config(self, config: OrcaConfig) -> None:
     self.config = config
 
   def add(self, task: OrcaTask) -> None:
@@ -58,8 +58,7 @@ class JSONFileLedger(Ledger):
 
   
   def add(self, task: OrcaTask) -> None:
-    d = self._create_entry(task)
-    self.f.write('{0}\n'.format(d))
+    self.f.write('{0}\n'.format(self._create_entry(task)))
 
     
   def close(self) -> None:
@@ -67,7 +66,7 @@ class JSONFileLedger(Ledger):
     log.debug('closed: {0}'.format(self.f))
     
     
-##################################################################    
+############################################
 
 class MongoLedger(Ledger):
   """Adds entries into a ledger hosted in Mongodb"""
@@ -80,8 +79,7 @@ class MongoLedger(Ledger):
 
   
   def add(self, task: OrcaTask) -> None:
-    d = self._create_entry(task)
-    self.col.insert_one(d)
+    self.col.insert_one(self._create_entry(task))
 
     
   def close(self) -> None:

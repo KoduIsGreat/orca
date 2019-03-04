@@ -15,8 +15,8 @@ from abc import ABCMeta, abstractmethod
 ## some global utility functions
 
 def values_tostr(d: Dict) -> Dict:
-  a = {key: str(value) for key, value in d.items()}
-  return a
+  return {key: str(value) for key, value in d.items()}
+
 
 def handle_service_result(response: Dict, outputs, name: str) -> Dict:
   d = {}
@@ -26,12 +26,14 @@ def handle_service_result(response: Dict, outputs, name: str) -> Dict:
       d[name + "." + k] = v
   return d
 
+
 def handle_csip_result(response: Dict, outputs: List, name: str) -> Dict:
   d = {}
   for k,v in response.items():
     if k in outputs:
       d[name + "." + k] = v['value']
   return d
+
 
 def handle_python_result(outputs: List, name: str, task_locals:Dict)-> Dict:
   d = {}
@@ -52,8 +54,8 @@ class OrcaHandler(metaclass=ABCMeta):
   def _check_symtable(self, name:str, task:Dict):
     if name is None or not name.isidentifier():
       raise OrcaConfigException('Invalid task name: "{0}"'.format(name))
-
     task_id = id(task)
+    # check against the task dict id to support loops.
     if self.symtable.get(name, task_id) != task_id:
       raise OrcaConfigException("Duplicate task name: {0}".format(name))
     self.symtable[name] = task_id
@@ -63,6 +65,7 @@ class OrcaHandler(metaclass=ABCMeta):
     self.config = config
     self._handle_sequence(config.job)
     self.close()
+  
   
   def _handle_sequence(self, sequence: Dict) -> None:
     for step in sequence:
@@ -127,9 +130,12 @@ class OrcaHandler(metaclass=ABCMeta):
 
   def _resolve_file_path(self, name: str, ext:str) -> str:
     """ resolve the full qualified path name"""
+    
+    # potential value resolution if this should be a file name
     try:
       name = eval(str(name), globals())
     except:
+      # ok, never mind
       pass
     
     if os.path.isfile(name):
@@ -146,6 +152,7 @@ class OrcaHandler(metaclass=ABCMeta):
         return rel_path
       else:
         if name.endswith(ext):
+          # this should be a file but it's not.
           raise OrcaConfigException('File not found: "{0}"'.format(name))
         return None
 
@@ -156,20 +163,20 @@ class OrcaHandler(metaclass=ABCMeta):
     # check the symbol table for task name to be an unique and valid name
     self._check_symtable(name, task_dict)
 
-    # task locals are the resolved inputs, they will be used for 
+    # task_locals are the resolved inputs, they will be used for 
     # execution
     task_locals = self.resolve_task_inputs(task_dict)
     _task = OrcaTask(task_dict, task_locals)
     
-    log.debug(" task '{0}' locals: {1}".format(_task.name, task_locals))
+    log.debug("task '{0}' locals pre: {1}".format(_task.name, task_locals))
     
     # select the handler and call handle
     handle = self.__select_handler(task_dict)
     result = handle(_task)
     
-    log.debug(" task '{0}' locals: {1}".format(_task.name, task_locals))
+    log.debug("task '{0}' locals post: {1}".format(_task.name, task_locals))
 
-    # put the tasl_locals into the global task dictonary
+    # put the task_locals into the global task dictonary
     # this includes input and outputs
     task[_task.name] = {}
     for k, v in task_locals.items():
@@ -177,39 +184,44 @@ class OrcaHandler(metaclass=ABCMeta):
       
     return _task
 
+
   # control structures
   def _handle_if(self, sequence:Dict, cond:str) -> None:
-    """Handle if."""
+    """Handle 'if'"""
     if eval(cond, globals()):
       self._handle_sequence(sequence)
             
+            
   def _handle_switch(self, sequence:Dict, cond:str) -> None:
-    """Handle conditional switch."""
+    """Handle 'switch'"""
     c = eval(cond, globals())
     seq = sequence.get(c, sequence.get("default", None))
     if seq is not None:
       self._handle_sequence(seq)
+
  
   def _handle_for(self, sequence:Dict, var_expr:str) -> None:
-    """Handle Looping"""
+    """Handle 'for'"""
     i = var_expr.find(",")
     if i == -1:
       raise OrcaConfigException('Invalid "for" expression: "{0}"'.format(var_expr))
+    
     var = var_expr[:i]
     if not var.isidentifier():
       raise OrcaConfigException('Not a valid identifier: "{0}"'.format(var))
+    
     expr = var_expr[i+1:]
     for i in eval(expr, globals()):
+      # mapping loop variable 'i' to 'var'
       exec("{0}='{1}'".format(var,i), globals())
       self._handle_sequence(sequence)
 
 
   def _handle_fork(self, sequences:Dict) -> None:
-    """Handle parallel execution"""
+    """Handle 'fork'"""
     with ThreadPoolExecutor(max_workers=(len(sequences))) as executor:
       for sequence in sequences:
         executor.submit(self._handle_sequence, sequence)
-
 
 
 
@@ -222,11 +234,13 @@ class ExecutionHandler(OrcaHandler):
     super().__init__()
     self.ledger = ledger or Ledger()
     
+    
   def handle(self, config: OrcaConfig) -> None:
     self.ledger.set_config(config)
     super().handle(config)
   
-  def close(self):
+  
+  def close(self) -> None:
     self.ledger.close()
 
 
@@ -236,15 +250,14 @@ class ExecutionHandler(OrcaHandler):
 
   def handle_csip(self, task: OrcaTask) -> Dict:
     try:
-      outputs = task.outputs
       client = Client()
-      for key, value in task.inputs.items():
+      for key, value in task.task_locals.items():
         if isinstance(value, DottedCollection):
           client.add_data(key, value.to_python())
         else:
           client.add_data(key, value)
       client = client.execute(task.csip)
-      return handle_csip_result(client.data, outputs, task.name)
+      return handle_csip_result(client.data, task.outputs, task.name)
     except requests.exceptions.HTTPError as e:
       raise OrcaConfigException(e)
       
@@ -252,7 +265,7 @@ class ExecutionHandler(OrcaHandler):
   def handle_http(self, task: OrcaTask) -> Dict:
     url = task.http
     name = task.name
-    inputs = task.inputs
+    inputs = task.task_locals
     if 'method' not in task.config:
       raise OrcaConfigException("requests service operator must include method: service {0}".format(name))
     if task.config['method'] == 'GET':

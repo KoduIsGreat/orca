@@ -7,7 +7,6 @@ from typing import List, Dict, TextIO
 from ruamel import yaml
 from dotted.collection import DottedDict
 from jsonschema import validate
-
 from orca.core.schema import schema
 
 
@@ -19,14 +18,18 @@ var = DottedDict()
 
 
 class OrcaException(Exception):
+  """Orca base exception"""
   pass
 
+
 class OrcaConfigException(OrcaException):
+  """Orca configuration exception"""
   pass
 
 
 class OrcaConfig(object):
   """ Orca configuration class"""
+
 
   @staticmethod
   def __process_config(file: TextIO) -> Dict:
@@ -54,6 +57,7 @@ class OrcaConfig(object):
       log.error(e)
       raise OrcaConfigException("error loading yaml file.")
   
+  
   @staticmethod
   def create(file: TextIO, args: List[str] = None) -> 'OrcaConfig':
     d = OrcaConfig.__process_config(file)
@@ -62,6 +66,7 @@ class OrcaConfig(object):
   
   def __init__(self, config: Dict, file: str = None, args: List[str] = None):
     ## the yaml file (if used)
+    
     self.file = file
     self.conf = config.get('conf', {})
     self.deps = config.get('dependencies', [])
@@ -76,15 +81,19 @@ class OrcaConfig(object):
       
   def get_yaml_dir(self) -> str:
     return os.path.dirname(self.file) if self.file is not None else "."
+
   
   def get_yaml_file(self) -> str:
     return self.file
+
   
   def get_version(self) -> str:
     return self.version
 
+
   def get_name(self) -> str:
     return self.name
+
   
   def __resolve_dependencies(self) -> None:
     for dep in self.deps:
@@ -93,6 +102,7 @@ class OrcaConfig(object):
         log.debug("importing dependency: '{0}'".format(dep))
       except Exception as b:
         raise OrcaConfigException("Cannot not resolve the '{0}' dependency".format(dep))
+
 
   def __set_vars(self, variables: Dict, args: List[str]) -> None:
     """put all variables as globals"""
@@ -105,3 +115,4 @@ class OrcaConfig(object):
         log.debug("  set var.{0} = {1} -> {2}".format(key, str(val), str(eval("var."+key))))
       except Exception as e:
         raise OrcaConfigException("Cannot set variable: {0}".format(key))
+
