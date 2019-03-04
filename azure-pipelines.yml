@@ -1,0 +1,30 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger:
+- master
+
+pool:
+  vmImage: 'Ubuntu-16.04'
+
+steps:
+- script: python -m pip install pipenv
+  displayName: 'Install pipenv'
+
+- script: python -m pipenv install
+  displayName: 'Build virtual environment'
+
+- script: python -m pipenv run python -m unittest tests/*_test.py
+  displayName: 'Run tests'
+
+# - script: |
+#     echo "name ='orca'" > orca/__init__.py
+#     ehco "__version__ = 0.4.$(Build.Id) >> orca/__init__.py"
+#     python -m pipenv run python -m setup.py sdist
+#   displayName: 'bump version and build'
+
+# - script: |
+#     twine upload -r pypi -p $(password) dist/orca-version.tar.gz
+#   displayName: publish package
