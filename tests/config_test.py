@@ -7,14 +7,17 @@ import os
 
 fixture_path = os.path.dirname(__file__)
 
+
 def get_config(file_name):
     path = os.path.join(fixture_path, 'fixtures', 'configs', file_name)
     with open(path, "r") as p:
-      return OrcaConfig.create(p)
+        return OrcaConfig.create(p)
+
 
 def print_workflow(file_name: str):
     handler = DotfileHandler()
     handler.handle(get_config(file_name))
+
 
 class OrcaConfigTest(unittest.TestCase):
 
@@ -28,4 +31,5 @@ class OrcaConfigTest(unittest.TestCase):
         print_workflow('par.yaml')
 
 
-if __name__ == '__main__': unittest.main()
+if __name__ == '__main__':
+    unittest.main()
