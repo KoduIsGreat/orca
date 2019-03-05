@@ -19,7 +19,7 @@ steps:
     inputs:
       versionSpec: '$(python.version)'
       architecture: 'x64'
-  - script: python -m pip install setuptools wheel flake8 requests
+  - script: python -m pip install setuptools wheel flake8 requests pytest pytest-cov
     displayName: 'install setup tools'
 
   - script: python setup.py install
@@ -31,20 +31,21 @@ steps:
   - script: flake8 .
     displayName: 'Run linter'
 
-  - script: python -m unittest tests/*_test.py
-    displayName: 'Test with pytest'
+  - script:  pytest tests --junitxml=junit/test-results.xml --cov=orca --cov-report=xml --cov-report=html
 
-#  - task: PublishTestResults@2
-#    condition: succeededOrFailed()
-#    inputs:
-#      testResultsFiles: '**/test-*.xml'
-#      testRunTitle: 'Publish test results for Python $(python.version)'
-#
-#  - task: PublishCodeCoverageResults@1
-#    inputs:
-#      codeCoverageTool: Cobertura
-#      summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/coverage.xml'
-#      reportDirectory: '$(System.DefaultWorkingDirectory)/**/htmlcov'
+    displayName: 'Run Unit tests'
+
+  - task: PublishTestResults@2
+    condition: succeededOrFailed()
+    inputs:
+      testResultsFiles: '**/test-*.xml'
+      testRunTitle: 'Publish test results for Python $(python.version)'
+
+  - task: PublishCodeCoverageResults@1
+    inputs:
+      codeCoverageTool: Cobertura
+      summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/coverage.xml'
+      reportDirectory: '$(System.DefaultWorkingDirectory)/**/htmlcov'
 ## - script: |
 #     twine upload -r pypi -p $(password) dist/orca-version.tar.gz
 #   displayName: publish package

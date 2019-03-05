@@ -8,7 +8,6 @@ from orca.core.ledger import JSONFileLedger
 from orca.core.ledger import MongoLedger
 from orca.core.ledger import KafkaLedger
 
-import logging
 import click
 import click_log
 
@@ -112,7 +111,7 @@ def validate(file, args):
 @click.argument('args', nargs=-1)
 def todot(file, args):
     """
-    Create a graphviz dot file from an orca workflow. 
+    Create a graphviz dot file from an orca workflow.
     """
     try:
         config = OrcaConfig.create(file, args)

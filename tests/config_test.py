@@ -1,6 +1,5 @@
 import unittest
 from orca.core.config import OrcaConfig
-from orca.core.handler import ExecutionHandler
 from orca.core.handler import DotfileHandler
 
 import os
