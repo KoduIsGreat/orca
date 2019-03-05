@@ -23,7 +23,10 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     entry_points={
         'setuptools.installation': [
-            'eggsecutable = orca.cli:orca'
+            'eggsecutable = orca.cli.commands:orca'
+        ],
+        'console_scripts': [
+            'orca=orca.cli.commands:orca'
         ]
     },
     classifiers=[
