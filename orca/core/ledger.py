@@ -3,11 +3,13 @@ import uuid
 import os
 import logging
 import pymongo
+import json
 
 from orca.core.tasks import OrcaTask
 from orca.core.config import OrcaConfig, log
 from typing import Dict, List
 from datetime import datetime
+from pykafka import KafkaClient
 
 
 class Ledger(object):
@@ -60,7 +62,7 @@ class JSONFileLedger(Ledger):
         log.debug('JSON Ledger: {0}'.format(self.f))
 
     def add(self, task: OrcaTask) -> None:
-        self.f.write('{0}\n'.format(self._create_entry(task)))
+        self.f.write('{0}\n'.format(json.dumps(self._create_entry(task))))
 
     def close(self) -> None:
         self.f.close()
@@ -85,3 +87,26 @@ class MongoLedger(Ledger):
     def close(self) -> None:
         self.mongo.close()
         log.debug('closed: {0}'.format(self.mongo))
+
+
+#############################################
+
+
+class KafkaLedger(Ledger):
+    """ Kafka ledger"""
+
+    def __init__(self, con: List[str]):
+        super().__init__()
+        self.kafka = KafkaClient(hosts=con[0])
+        topic = self.kafka.topics[con[1]]
+        self.producer = topic.get_producer()
+
+    def add(self, task: OrcaTask) -> None:
+        self.producer.produce(json.dumps(self._create_entry(task)))
+
+    def close(self) -> None:
+        self.kafka.close()
+        log.debug('closed: {0}'.format(self.kafka))
+        
+        
+

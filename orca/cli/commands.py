@@ -6,6 +6,7 @@ from orca.core.handler import ValidationHandler
 from orca.core.handler import DotfileHandler
 from orca.core.ledger import JSONFileLedger
 from orca.core.ledger import MongoLedger
+from orca.core.ledger import KafkaLedger
 
 import logging
 import click
@@ -38,6 +39,16 @@ def check_format(ctx, param, value):
         ctx.exit()
     return c
 
+def check_format_kafka(ctx, param, value):
+    if value is None:
+        return
+    c = value.split('/')
+    if len(c) != 2:
+        log.error(
+            "Invalid kafka connect string, expected '<host[:port]>/topic'")
+        ctx.exit()
+    return c
+
 
 # run a workflow:
 # python3 orca run --ledger-json /tmp/f.json for.yaml
@@ -50,19 +61,22 @@ def check_format(ctx, param, value):
 @click.option('--ledger-json', type=click.Path(), help='file ledger.')
 @click.option('--ledger-mongo', type=str,
               help='mongodb ledger, TEXT format "<host[:port]>/<db>/<col>".', callback=check_format)
+@click.option('--ledger-kafka', type=str,
+              help='kafka ledger, TEXT format "<host[:port]>/topic".', callback=check_format_kafka)
 @click.argument('file', type=click.File('r'))
 @click.argument('args', nargs=-1)
-def run(ledger_json, ledger_mongo, file, args):
+def run(ledger_json, ledger_mongo, ledger_kafka, file, args):
     """
     Run an orca workflow.
     """
     try:
-
         ledger = None
         if ledger_json:
             ledger = JSONFileLedger(ledger_json)
         elif ledger_mongo:
             ledger = MongoLedger(ledger_mongo)
+        elif ledger_kafka:
+            ledger = KafkaLedger(ledger_kafka)
 
         config = OrcaConfig.create(file, args)
         executor = ExecutionHandler(ledger)
