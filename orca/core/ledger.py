@@ -106,6 +106,3 @@ class KafkaLedger(Ledger):
     def close(self) -> None:
         self.kafka.close()
         log.debug('closed: {0}'.format(self.kafka))
-        
-        
-
