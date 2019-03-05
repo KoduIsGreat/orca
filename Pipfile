@@ -11,6 +11,7 @@ click = "*"
 click-log = "*"
 dotted = "*"
 pymongo = "*"
+pykafaka = "*"
 "ruamel.yaml" = "*"
 
 [dev-packages]
