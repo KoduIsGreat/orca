@@ -30,11 +30,11 @@ job:
   - task: nwm
     csip: http://ehs-csip-nwm.eastus.azurecontainer.io:8080/csip.nwm/d/netcdf/1.0
     inputs:
-      comids: catchments
+
+    outputs:      comids: catchments
       fcTimesToHarvest: forecasts
       property: str('streamflow')
       type: str('short_range')
-    outputs:
       - forecasts
 
   - task: agg

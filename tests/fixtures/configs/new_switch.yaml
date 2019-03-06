@@ -1,0 +1,35 @@
+apiversion: orca/'1.0'
+
+version: '0.1'
+dependencies:
+  - os
+var:
+  afile: 'a.py'
+  select: 'test5'
+  th: 12
+job:
+  - control: switch between 5 and 1
+    switch: var.select
+    test5:
+      - task: start5_1
+        python: var.afile
+      - task: start5_2
+        python: var.afile
+
+    test1:
+      - task: start1_1
+        python: var.afile
+      - task: start1_2
+        python: var.afile
+
+    default:
+      - task: default
+        python: var.afile
+
+  - task: middle
+    python: var.afile
+
+  - task: last2
+    python: var.afile
+
+

@@ -1,11 +1,11 @@
 import json
 import logging
-import re
 import os
-
+import re
 from typing import List, Dict, TextIO
-from ruamel import yaml
+
 from dotted.collection import DottedDict
+from ruamel import yaml
 
 log = logging.getLogger(__name__)
 
@@ -37,7 +37,11 @@ class OrcaConfig(object):
 
             # NOQA
             orig = yaml.load(data, Loader=yaml.Loader)
-            # validate(orig, schema)
+            # try:
+            #     validate(orig, schema)
+            # except ValidationError as e:
+            #     log.error('Error Validating {0} : {1}'.format(file.name, e.message))
+            #     raise OrcaConfigException('Error Validating {} : '.format(file.name), e)
 
             # processing single quote string literals: " ' '
             repl = r"^(?P<key>\s*[^#:]*):\s+(?P<value>['].*['])\s*$"
@@ -73,7 +77,6 @@ class OrcaConfig(object):
         self.version = config.get('version', '0.0')
         self.name = config.get('name', file)
 
-        self.__resolve_dependencies()
         self.__set_vars({} if self.var is None else self.var,
                         args if args is not None else [])
 
@@ -89,14 +92,14 @@ class OrcaConfig(object):
     def get_name(self) -> str:
         return self.name
 
-    def __resolve_dependencies(self) -> None:
+    def __resolve_dependencies(self):
         for dep in self.deps:
             try:
                 exec("import " + dep, globals())
                 log.debug("importing dependency: '{0}'".format(dep))
-            except Exception as b:
+            except Exception as e:
                 raise OrcaConfigException(
-                    "Cannot not resolve the '{0}' dependency".format(dep))
+                    "Cannot not resolve the '{0}' dependency".format(dep), e)
 
     def __set_vars(self, variables: Dict, args: List[str]) -> None:
         """put all variables as globals"""
@@ -106,7 +109,7 @@ class OrcaConfig(object):
                 raise OrcaConfigException(
                     'Invalid variable identifier: "{0}"'.format(key))
             try:
-                exec("var.{0}={1}".format(key, val), locals(), globals())
+                exec("var.{0}={1}".format(key, val), globals())
                 log.debug(
                     "  set var.{0} = {1} -> {2}".format(key, str(val), str(eval("var." + key))))
             except Exception as e:

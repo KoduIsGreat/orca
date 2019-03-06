@@ -1,7 +1,7 @@
 import os
 import subprocess as subp
 import requests
-
+import json
 from csip import Client
 from typing import List, Dict
 from orca.core.tasks import OrcaTask
@@ -12,7 +12,10 @@ from dotted.collection import DottedCollection
 from abc import ABCMeta, abstractmethod
 
 from orca.core.config import var  # noqa: F401
+
+
 # some global utility functions
+
 
 def values_tostr(d: Dict) -> Dict:
     return {key: str(value) for key, value in d.items()}
@@ -175,7 +178,9 @@ class OrcaHandler(metaclass=ABCMeta):
 
         # select the handler and call handle
         handle = self.__select_handler(task_dict)
+        log.info('Starting task {0}'.format(name))
         result = handle(_task)
+        log.info('Task {0} completed'.format(name, ))
 
         log.debug("task '{0}' locals post: {1}".format(
             _task.name, task_locals))
@@ -237,8 +242,10 @@ class ExecutionHandler(OrcaHandler):
     def __init__(self, ledger: Ledger = None):
         super().__init__()
         self.ledger = ledger or Ledger()
+        self.validator = ValidationHandler()
 
     def handle(self, config: OrcaConfig) -> None:
+        log.info('Executing workflow...')
         self.ledger.set_config(config)
         super().handle(config)
 
@@ -266,16 +273,20 @@ class ExecutionHandler(OrcaHandler):
         url = _task.http
         name = _task.name
         inputs = _task.locals
+        headers = _task.config.get('header')
+        content_type = headers.get('content-type', 'text/plain')
         if 'method' not in _task.config:
             raise OrcaConfigException(
                 "requests service operator must include method: service {0}".format(name))
-        if _task.config['method'] == 'GET':
-            return handle_service_result(requests.get(url, params=_task.config['params']).content, name)
+        if _task.config.get('method') == 'GET':
+            return handle_service_result(json.loads(requests.get(url, params=_task.config.get('params', None)).content),
+                                         _task.outputs, name)
         elif _task.config['method'] == 'POST':
             if isinstance(inputs, DottedCollection):
-                return handle_service_result(requests.post(url, inputs.to_python()).content, name)
+                return handle_service_result(json.loads(requests.post(url, inputs.to_python()).content), _task.outputs,
+                                             name)
             else:
-                return handle_service_result(requests.post(url, inputs).content, name)
+                return handle_service_result(json.loads(requests.post(url, inputs).content), _task.outputs, name)
 
     def handle_bash(self, _task: OrcaTask) -> Dict:
         env = {}

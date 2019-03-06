@@ -1,0 +1,70 @@
+apiversion: orca/'1.0'
+
+version: '0.1'
+var:
+  forecast: 0
+  nomadsUrl: 'https://nomads.ncep.noaa.gov/pub/data/nccf/com/nwm/prod/nwm.{0}/short_range/'
+  fileName: 'nwm.t{0}z.short_range.channel_rt'
+job:
+  # bash inline task
+  - task: get_today
+    python: |
+      import datetime
+      today = datetime.datetime.utcnow()
+      print(today)
+    outputs:
+      - today
+
+  - task: get_nomads
+    python: |
+      import requests
+      formatted_url = url.format(today.strftime("%Y%m%d"))
+      html = requests.get(formatted_url, headers={'Content-Type': 'text/plain'}).content
+      print(html)
+    inputs:
+      today: task.get_today.today
+      url: var.nomadsUrl
+    outputs:
+      - html
+
+  - task: scrape_html
+    python: |
+      import bs4
+      soup = bs4.BeautifulSoup(html, 'html.parser')
+      a_tags = soup.find_all('a')
+      fmt_file = file.format(str(forecast).zfill(2))
+      find_file = lambda f: f.get_text().startswith(fmt_file)
+      file_exists = len ( list ( filter ( find_file, a_tags ) ) ) > 0
+      print('file {0} is present ?  = {1}'.format(fmt_file, file_exists))
+    inputs:
+      file: var.fileName
+      forecast: var.forecast
+      html: task.get_nomads.html
+
+  - if task.scrape_html.file_exists:
+    - task: catchments
+      http: http://40.71.85.254/api/v1/catchments
+      config:
+        method: GET
+        header:
+          content-type: 'application/json'
+      outputs:
+        - all
+    - fork:
+      - - task: get_ids
+          python: |
+            get_ids = lambda c: c['id']
+            feature_ids = list( map (get_ids, features)
+          inputs:
+            features: task.catchments.features
+          outputs:
+            - feature_ids
+        - task: harvest_nwm
+          csip: http://ehs-csip-nwm.eastus.azurecontainer.io:8080/csip.nwm/d/netcdf/1.0
+          inputs:
+            comids: task.get_ids.feature_ids
+            fcTimesToHarvest: var.forecast
+            property: streamflow
+            type: short_range
+          outputs:
+            - forecasts

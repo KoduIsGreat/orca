@@ -1,0 +1,12 @@
+site_name: Orca 0.4.0
+nav:
+  - Home: index.md
+  - Concepts: concepts.md
+  - Commands: commands.md
+  - Tasks: tasks.md
+  - Examples: examples.md
+  - Workflow Reference: workflow.md
+  - API Reference: api.md
+  - About: about.md
+
+theme: readthedocs

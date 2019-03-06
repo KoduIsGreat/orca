@@ -20,6 +20,9 @@ def run_workflow(file_name: str):
 
 class OrcaExecutionTest(unittest.TestCase):
 
+    def test_comprehensive_example(self):
+        run_workflow('datetime.yaml')
+
     def test_inline_bash_task(self):
         run_workflow('bash-inline.yaml')
 

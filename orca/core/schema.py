@@ -1,5 +1,5 @@
 schema = {
-    "$schema": "https://json-schema.org/schema#",
+    "$schema": "http://json-schema.org/draft-07/schema#",
     "id": "orca_schema_v1",
     "type": "object",
     "required": ["version", "job"],
@@ -44,8 +44,19 @@ schema = {
         "task": {
             "id": "#/definitions/task",
             "type": "object",
+            "anyOf": [
+                {"required": ["python"]},
+                {"required": ["csip"]},
+                {"required": ["bash"]},
+                {"required": ["http"]}
+            ],
             "properties": {
                 "task": {"type": "string"},
+                "python": {"type": "string"},
+                "bash": {"type": "string"},
+                "http": {"type": "string"},
+                "csip": {"type": "string"},
+
                 "inputs": {
                     "type": "object",
                     "patternProperties": {
@@ -64,7 +75,8 @@ schema = {
                 },
                 "outputs": {
                     "type": "array",
-                    "items": ["string"]
+                    "items": [{"type": "string"}],
+                    "uniqueItems": True
                 }
             }
         },
