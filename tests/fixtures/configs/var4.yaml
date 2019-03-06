@@ -1,0 +1,45 @@
+# test dataflow through tasks
+apiversion: orca/'1.0'
+
+version: '0.1'
+
+var:
+  inp: 20
+  
+job:
+  - task: test
+    python: |
+          c = inp + in1
+          assert c== 32
+    inputs:
+      inp: 12
+      in1: var.inp
+    outputs:
+      - c
+
+  - task: test2
+    python: |
+          out = inp + in1
+          assert out == 22
+    inputs:
+      inp: 2
+      in1: var.inp
+    outputs:
+      - out
+
+  - task: test3
+    python: |
+          a =  i1 + i2 + i3
+          assert a == 87
+    inputs:
+      i1: task.test.c
+      i2: task.test2.out
+      i3: 33
+    outputs:
+      - a
+
+  - task: test4
+    python: |
+          assert i1 == 87
+    inputs:
+      i1: task.test3.a
