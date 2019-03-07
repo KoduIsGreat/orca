@@ -19,6 +19,7 @@ setuptools = "*"
 wheel = "*"
 flake8 = "*"
 pytest = "*"
+mkdocs = "*"
 
 [requires]
 python_version = "3.6"
