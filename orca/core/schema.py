@@ -28,6 +28,13 @@ schema = {
         "if": {
             "id": "#/definitions/if",
             "type": "object",
+            "properties": {
+                "if": {"type": "string"},
+                "do": {
+                    "type": "array",
+                    "items": {"$ref": ""}
+                }
+            }
         },
         "for": {
             "id": "#/definitions/for",

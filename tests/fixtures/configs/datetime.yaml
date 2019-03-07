@@ -41,30 +41,31 @@ job:
       forecast: var.forecast
       html: task.get_nomads.html
 
-  - if task.scrape_html.file_exists:
-    - task: catchments
-      http: http://40.71.85.254/api/v1/catchments
-      config:
-        method: GET
-        header:
-          content-type: 'application/json'
-      outputs:
-        - all
-    - fork:
-      - - task: get_ids
-          python: |
-            get_ids = lambda c: c['id']
-            feature_ids = list( map (get_ids, features)
-          inputs:
-            features: task.catchments.features
-          outputs:
-            - feature_ids
-        - task: harvest_nwm
-          csip: http://ehs-csip-nwm.eastus.azurecontainer.io:8080/csip.nwm/d/netcdf/1.0
-          inputs:
-            comids: task.get_ids.feature_ids
-            fcTimesToHarvest: var.forecast
-            property: streamflow
-            type: short_range
-          outputs:
-            - forecasts
+  - if: task.scrape_html.file_exists
+    do:
+      - task: catchments
+        http: http://40.71.85.254/api/v1/catchments
+        config:
+          method: GET
+          header:
+            content-type: 'application/json'
+        outputs:
+          - all
+      - fork:
+        - - task: get_ids
+            python: |
+              get_ids = lambda c: c['id']
+              feature_ids = list( map (get_ids, features)
+            inputs:
+              features: task.catchments.features
+            outputs:
+              - feature_ids
+          - task: harvest_nwm
+            csip: http://ehs-csip-nwm.eastus.azurecontainer.io:8080/csip.nwm/d/netcdf/1.0
+            inputs:
+              comids: task.get_ids.feature_ids
+              fcTimesToHarvest: var.forecast
+              property: streamflow
+              type: short_range
+            outputs:
+              - forecasts

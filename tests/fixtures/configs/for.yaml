@@ -12,16 +12,17 @@ var:
   greetTo: 'Adam'
   
 job:
-  - for v, range(1, var.counter):
-    - task: example
-      python: |
-            excitement_level = ''
-            for i in range(1, excited):
-                excitement_level += '!'
-            #print('Hello {0}{1}'.format(name, excitement_level))
-      inputs:
-        excited: var.counter
-        name: var.greetTo
+  - for: v, range(1, var.counter)
+    do:
+      - task: example
+        python: |
+              excitement_level = ''
+              for i in range(1, excited):
+                  excitement_level += '!'
+              #print('Hello {0}{1}'.format(name, excitement_level))
+        inputs:
+          excited: var.counter
+          name: var.greetTo
         
   - task: last 
     python: 'a.py'

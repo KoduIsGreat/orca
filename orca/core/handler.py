@@ -79,18 +79,18 @@ class OrcaHandler(metaclass=ABCMeta):
             if node == "task":
                 log.debug(" ---- task: '{}'".format(step['task']))
                 self._handle_task(step)
-            elif node.startswith("if "):
-                log.debug(" ---- if: '{}'".format(node[3:]))
-                self._handle_if(step[node], node[3:])
-            elif node.startswith("for "):
-                log.debug(" ---- for: '{}'".format(node[4:]))
-                self._handle_for(step[node], node[4:])
-            elif node == "fork":
+            elif node == "if":
+                log.debug(" ---- if: '{}'".format(step['if']))
+                self._handle_if(step)
+            elif node == "for":
+                log.debug(" ---- for: '{}'".format(step['for']))
+                self._handle_for(step)
+            elif node.startswith("fork"):
                 log.debug(" ---- fork: ")
-                self._handle_fork(step[node])
-            elif node.startswith("switch "):
-                log.debug(" ---- switch: '{}'".format(node[7:]))
-                self._handle_switch(step[node], node[7:])
+                self._handle_fork(step)
+            elif node == "switch":
+                log.debug(" ---- switch: '{}'".format(step['switch']))
+                self._handle_switch(step)
             else:
                 raise OrcaConfigException(
                     'Invalid step in job: "{0}"'.format(node))
@@ -194,20 +194,24 @@ class OrcaHandler(metaclass=ABCMeta):
         return _task
 
     # control structures
-    def _handle_if(self, sequence: Dict, cond: str) -> None:
+    def _handle_if(self, condition_block: Dict) -> None:
         """Handle 'if'"""
+        cond = condition_block['if']
+        sequence = condition_block['do']
         if eval(cond, globals()):
             self._handle_sequence(sequence)
 
-    def _handle_switch(self, sequence: Dict, cond: str) -> None:
+    def _handle_switch(self, condition_block: Dict) -> None:
         """Handle 'switch'"""
-        c = eval(cond, globals())
-        seq = sequence.get(c, sequence.get("default", None))
+        cond = condition_block['switch']
+        case = eval(cond, globals())
+        seq = condition_block.get(case, condition_block.get('default', None))
         if seq is not None:
             self._handle_sequence(seq)
 
-    def _handle_for(self, sequence: Dict, var_expr: str) -> None:
+    def _handle_for(self, condition_block: Dict) -> None:
         """Handle 'for'"""
+        var_expr = condition_block['for']
         i = var_expr.find(",")
         if i == -1:
             raise OrcaConfigException(
@@ -225,7 +229,7 @@ class OrcaHandler(metaclass=ABCMeta):
             if isinstance(i, str):
                 q = "'"
             exec("{0}={2}{1}{2}".format(var, i, q), globals())
-            self._handle_sequence(sequence)
+            self._handle_sequence(condition_block['do'])
 
     def _handle_fork(self, sequences: Dict) -> None:
         """Handle 'fork'"""
@@ -478,8 +482,10 @@ class DotfileHandler(OrcaHandler):
                 self.dot.append('{0} -> {1}'.format(self.last_task, term))
             self.last_task = term
 
-    def _handle_if(self, sequence: Dict, cond: str) -> None:
+    def _handle_if(self, conditional_block: Dict) -> None:
         """Handle if."""
+        cond = conditional_block['if']
+        sequence = conditional_block['do']
         name = "if_{0}".format(self.idx)
         term = "term_{0}".format(self.idx)
         self.idx += 1
