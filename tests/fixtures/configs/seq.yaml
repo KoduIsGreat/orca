@@ -1,0 +1,97 @@
+apiversion: orca/'1.0'
+
+version: '0.1'
+
+var:
+  file: 'climate.txt'
+  dir: '/tmp'
+  
+job:
+  # version 1
+  
+  # csip task
+  - task: hydraulics
+    csip: http://csip.engr.colostate.edu:8088/csip-hydraulics/m/hydraulics/channelgeometry/1.0
+    inputs:
+      depthType: user
+      depth: 5
+      crossSection: "x\ty\n0\t3250\n10\t3240\n41.4\t3242\n52.3\t3243\n61.8\t3248\n72\t3241\n84\t3239\n87\t3242\n95\t3248\n123\t3252"
+      irregularGeometry : false
+      bottomWidth: 6.096
+      sideSlope: 2
+      discharge: 11.3267
+      bedSlope: 0.0016
+      manningRoughness: 0.025
+    outputs:
+      - topWidth
+      - hydraulicRadius
+      - hydraulicDepth
+      - ts
+    
+  # bash script task
+  - task: reformat 
+    bash: reformat.sh
+    inputs:
+      - FORMAT='CSV'
+      - FILE=var.file
+      - TARGET='/tmp'
+      
+      
+  # bash inline task
+  - task: tolower  
+    bash: |
+        for i in $( ls $DIR | grep [A-Z] ); do
+          mv -i $i `echo $i | tr 'A-Z' 'a-z'`; 
+        done
+        echo "done."
+    inputs:
+      DIR: var.dir
+
+  # python task
+  - task: mean
+    python: 'mean.py'
+    inputs:
+      task.hydraulics.ts
+    outputs:
+      - mean_value
+        
+  
+  # http task
+  - task: start3
+    http: http://perams10.engr.colostate.edu
+    config:
+      method: GET
+      type: query_param
+      header:
+        content-type: "text/plain"
+    inputs:
+      mean: task.mean.mean_value
+
+
+## version 1.1:
+#  - task: publish
+#    kafka: http://perams10.engr.colostate.edu
+#    topic: logging_test
+#    kind: producer
+#    inputs:
+#      KEY: msg
+#      VALUE: start3.out1
+#
+#  - task: barrier
+#    kafka: http://perams10.colostate.edu
+#    topic: logging_test
+#    kind: consumer
+#    outputs:
+#      - start3
+#      - out1
+#
+#  - task: last
+#    email: odavid@colostate.com
+#    cc: adam@...
+#    subject: "job finished"
+#    body: |
+#         The job has finished with $status and
+#         the mean $mean was calculated.
+#    inputs:
+#      status: emit.status
+#      mean: task.mean.mean_value

@@ -1,0 +1,42 @@
+orcaworkflow := name version dependecies var config job
+version := "version: " STR \n
+dependecies := "dependencies :" \n
+                 strlist
+var := "var: " \n
+         elementlist
+config := "config: " \n
+         elementlist
+name := "name : " STR \n
+job := "job: " \n
+              sequence
+sequence := [step]+
+step := task | control
+control := if | for | fork | switch
+if := "- if" EXPR ":" \n
+           sequence
+for := "- for" VAR "," EXPR ": " \n
+           sequence
+switch := "- switch " EXPR " : " \n
+           [cases]+
+cases:= STR ": " \n
+          sequence
+fork:= "- fork :" \n
+         ["- " sequence]+
+task := " - task: " STR \n 
+           kind \n |
+           inputs \n
+           outputs \n
+kind := bash | python | csip | http
+bash := "bash: " [STR | FILE] \n
+python := "python: " FILE \n
+csip := "csip: " URI \n
+http :=  "http: " URI \n
+
+inputs := "inputs:" \n 
+           elementlist
+inputitem := STR ":" EXPR \n
+output := "outputs: " \n
+           strlist
+elementlist := [STR ":" EXPR \n]+
+strlist :=  ["- " STR \n]+ 
+           

@@ -1,0 +1,30 @@
+apiversion: orca/'1.0'
+
+version: '0.1.1'
+
+schedule: 00 09-18 * * 1-5
+
+dependencies: 
+  - os
+  
+var:
+  counter: 5
+  greetTo: 'Adam'
+  
+job:
+  - for v, range(1, var.counter):
+    - task: example
+      python: |
+            excitement_level = ''
+            for i in range(1, excited):
+                excitement_level += '!'
+            #print('Hello {0}{1}'.format(name, excitement_level))
+      inputs:
+        excited: var.counter
+        name: var.greetTo
+        
+  - task: last 
+    python: 'a.py'
+    
+     
+     

@@ -1,0 +1,48 @@
+apiversion: '1.0'
+name: test
+description: a test
+version: '1.0'
+dependencies:
+  - bs4
+  - datetime
+vars:
+#  utcToday: datetime.utcnow()
+#  hour: utcToday.hour
+  forecasts: [0]
+  #urls
+  catchmentsUrl: str('http://localhost/api/v1/catchments')
+  noaaUrl: str('https://nomads.ncep.noaa.gov/pub/data/nccf/com/nwm/prod/nwm.20190213/short_range/')
+  #.format(utcToday.strftime("%Y%m%d"))
+  fileName: str('nwm.t{0}z.short_range.channel_rt').format(str(forecasts[0]).zfill(2))
+  #functions
+  fetch: "lambda url: json.loads(requests.get(url).content)"
+  getIds: "lambda catchment: catchment['comid']"
+  findFile: "lambda f: f.get_text().startswith(fileName)"
+  #variables
+  noaaHeader:
+    Content-Type: "text/plain"
+  html: requests.get(noaaUrl, headers=noaaHeader).content
+  aTags: BeautifulSoup(html, 'html.parser').find_all('a')
+  fileExists:  len ( list ( filter ( findFile, aTags ) ) ) > 0
+  catchments: list( map (getIds, fetch(catchmentsUrl) ) )
+job:
+- if fileExists :
+  - task: nwm
+    csip: http://ehs-csip-nwm.eastus.azurecontainer.io:8080/csip.nwm/d/netcdf/1.0
+    inputs:
+
+    outputs:      comids: catchments
+      fcTimesToHarvest: forecasts
+      property: str('streamflow')
+      type: str('short_range')
+      - forecasts
+
+  - task: agg
+    csip: http://localhost:8084/csip.temporal-aggregator/d/temporal/parameter/1.0
+    inputs:
+      calc: str('sum')
+      type: str('equals')
+      timeSeries: service.nwm.forecasts
+    outputs:
+      - data
+

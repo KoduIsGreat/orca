@@ -1,0 +1,27 @@
+apiversion: orca/'1.0'
+
+version: '0.1'
+
+dependencies:
+  - os
+var:
+  afile: 'a.py'
+
+job:
+  - fork:
+     # first group of tasks
+     -  - task: start1
+          python: var.afile
+        - task: start4
+          python: var.afile
+     # second group      
+     -  - task: start2
+          python: var.afile
+     # third group     
+     -  - task: start3
+          python: var.afile
+
+  # start3, start4, and start51 will join here          
+  - task: start5
+    python: var.afile
+     

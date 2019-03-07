@@ -4,17 +4,22 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-argparse = "*"
-pyyaml = "==4.2b1"
 requests = "*"
 csip = "*"
 jsonschema = "*"
 click = "*"
+click-log = "*"
+dotted = "*"
+pymongo = "*"
+pykafka = "*"
+"ruamel.yaml" = "*"
 
 [dev-packages]
 setuptools = "*"
 wheel = "*"
-pylint = "*"
+flake8 = "*"
+pytest = "*"
+mkdocs = "*"
 
 [requires]
 python_version = "3.6"

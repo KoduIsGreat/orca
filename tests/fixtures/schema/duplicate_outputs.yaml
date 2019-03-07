@@ -1,0 +1,16 @@
+apiversion: orca/'1.0'
+
+version: '0.1'
+
+var:
+  value: 5
+
+job:
+  # bash inline task
+  - task: test basic task
+    python: b = a*a
+    inputs:
+      a: var.dir
+    outputs:
+      - b
+      - b
