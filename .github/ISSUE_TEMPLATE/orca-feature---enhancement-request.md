@@ -2,8 +2,7 @@
 name: Orca Feature / Enhancement request
 about: Suggest an idea for this project
 title: "[FEATURE]"
-labels: enhancement, help wanted
-assignees: KoduIsGreat, odav
+labels: enhancement, help wanted, feature
 
 ---
 
