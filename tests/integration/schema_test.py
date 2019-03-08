@@ -3,6 +3,7 @@ from orca.core.config import OrcaConfig, OrcaConfigException  # noqa: F401
 
 from tests.util import get_config
 
+
 class OrcaSchemaTest(TestCase):
     pass
 
