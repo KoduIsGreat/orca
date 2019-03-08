@@ -60,12 +60,9 @@ schema = {
             "required": ["switch", "default"],
             "properties": {
                 "switch": {"type": "string"},
-                "default": {"$ref": "#definitions/job"}
+                "default": {"$ref": "#/definitions/job"}
             },
-            "patternProperties": {
-                "[a-zA-Z0-9]*$": {"$ref": "#definitions/job"}
-            },
-            "additionalProperties": True
+            "additionalProperties": {"$ref": "#/definitions/job"}
         },
         "fork": {
             "id": "#/definitions/fork",
