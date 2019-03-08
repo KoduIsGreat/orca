@@ -6,6 +6,9 @@ from typing import List, Dict, TextIO
 
 from dotted.collection import DottedDict
 from ruamel import yaml
+from jsonschema import validate, ValidationError
+from jsonschema import Draft7Validator
+from orca.core.schema import schema
 
 log = logging.getLogger(__name__)
 
@@ -37,11 +40,11 @@ class OrcaConfig(object):
 
             # NOQA
             orig = yaml.load(data, Loader=yaml.Loader)
-            # try:
-            #     validate(orig, schema)
-            # except ValidationError as e:
-            #     log.error('Error Validating {0} : {1}'.format(file.name, e.message))
-            #     raise OrcaConfigException('Error Validating {} : '.format(file.name), e)
+            try:
+                validate(orig, schema, Draft7Validator)
+            except ValidationError as e:
+                log.error('Error Validating {0} : {1}'.format(file.name, e.message))
+                raise OrcaConfigException('Error Validating {} : '.format(file.name), e)
 
             # processing single quote string literals: " ' '
             repl = r"^(?P<key>\s*[^#:]*):\s+(?P<value>['].*['])\s*$"

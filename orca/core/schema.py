@@ -5,6 +5,7 @@ schema = {
     "required": ["version", "job"],
 
     "properties": {
+        "apiversion": {"type": "string"},
         "version": {"type": "string"},
         "var": {
             "type": "object",
@@ -17,41 +18,64 @@ schema = {
         },
         "name": {"type": "string"},
         "description": {"type": "string"},
-        "job": {
-            "type": "array",
-            "items": {"$ref": "#definitions/task"}
-        }
+        "job": {"$ref": "#definitions/job"}
 
     },
 
     "definitions": {
+        "job": {
+            "type": "array",
+            "items": {
+                "anyOf": [
+                    {"$ref": "#definitions/task"},
+                    {"$ref": "#definitions/if"},
+                    {"$ref": "#definitions/for"},
+                    {"$ref": "#definitions/switch"},
+                    {"$ref": "#definitions/fork"},
+                ]
+            }
+        },
         "if": {
             "id": "#/definitions/if",
             "type": "object",
+            "required": ["if", "do"],
             "properties": {
                 "if": {"type": "string"},
-                "do": {
-                    "type": "array",
-                    "items": {"$ref": ""}
-                }
+                "description": {"type": "string"},
+                "do": {"$ref": "#/definitions/job"}
             }
         },
         "for": {
             "id": "#/definitions/for",
+            "required": ["for", "do"],
             "type": "object",
+            "properties": {
+                "for": {"type": "string"},
+                "do": {"$ref": "#/definitions/job"}
+            }
         },
         "switch": {
             "id": "#/definitions/switch",
             "type": "object",
+            "required": ["switch", "default"],
+            "properties": {
+                "switch": {"type": "string"},
+                "default": {"$ref": "#definitions/job"}
+            },
+            "patternProperties": {
+                "[a-zA-Z0-9]*$": {"$ref": "#definitions/job"}
+            },
+            "additionalProperties": True
         },
         "fork": {
             "id": "#/definitions/fork",
-            "type": "object",
+            "type": "array",
+            "items": {"$ref": "#/definitions/job"}
         },
         "task": {
             "id": "#/definitions/task",
             "type": "object",
-            "anyOf": [
+            "oneOf": [
                 {"required": ["python"]},
                 {"required": ["csip"]},
                 {"required": ["bash"]},
@@ -85,7 +109,8 @@ schema = {
                     "items": [{"type": "string"}],
                     "uniqueItems": True
                 }
-            }
+            },
+            "additionalProperties": False
         },
     }
 }
