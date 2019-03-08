@@ -87,7 +87,7 @@ class OrcaHandler(metaclass=ABCMeta):
                 self._handle_for(step)
             elif node.startswith("fork"):
                 log.debug(" ---- fork: ")
-                self._handle_fork(step)
+                self._handle_fork(step['fork'])
             elif node == "switch":
                 log.debug(" ---- switch: '{}'".format(step['switch']))
                 self._handle_switch(step)
@@ -438,8 +438,10 @@ class DotfileHandler(OrcaHandler):
                 self.dot.append('{0} -> {1}'.format(self.last_task, term))
             self.last_task = term
 
-    def _handle_for(self, sequence: Dict, var_expr: str) -> None:
+    def _handle_for(self, conditional_block: Dict, ) -> None:
         """Handle Looping"""
+        var_expr = conditional_block['for']
+        sequence = conditional_block['do']
         name = "for_{0}".format(self.idx)
         term = "term_{0}".format(self.idx)
         self.idx += 1
@@ -459,8 +461,11 @@ class DotfileHandler(OrcaHandler):
             self.dot.append('{0} -> {1} [style="dotted"]'.format(term, name))
             self.last_task = term
 
-    def _handle_switch(self, sequence: Dict, cond: str) -> None:
+    def _handle_switch(self, conditional_block: Dict, ) -> None:
         """Handle conditional switch."""
+        cond = conditional_block['switch']
+        cases = conditional_block.copy()
+        cases.pop('switch')
         name = "switch_{0}".format(self.idx)
         term = "term_{0}".format(self.idx)
         self.idx += 1
@@ -469,13 +474,13 @@ class DotfileHandler(OrcaHandler):
                 '{0} [shape=diamond,fillcolor=cornsilk,fontcolor="dodgerblue3",label="SWITCH\\n{1}"]'.format(name,
                                                                                                              cond))
             self.dot.append('{0} [shape=point]'.format(term))
-            for case, seq in sequence.items():
+            for case, seq in cases.items():
                 self._handle_sequence(seq)
         else:
             self.dot.append(
                 '{0} -> {1} {2}'.format(self.last_task, name, self.last_vertex_label))
             self.last_vertex_label = ''
-            for case, seq in sequence.items():
+            for case, seq in cases.items():
                 self.last_task = name
                 self.last_vertex_label = '[label="{0}"]'.format(case)
                 self._handle_sequence(seq)
