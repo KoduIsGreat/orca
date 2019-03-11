@@ -16,4 +16,7 @@ job:
       DIR: var.dir
 
   - task: echo
+    bash: echo im a copy!
+
+  - task: echo
     bash: pwd

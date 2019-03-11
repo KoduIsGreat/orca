@@ -9,8 +9,7 @@ job:
   - task: echo
     bash: echo hello
 
-  - control: is the value equal to 5
-    if: var.value == 5
+  - if: var.value == 5
     do:
       - task: conditional echo
         bash: echo wow we're in a condition!

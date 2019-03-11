@@ -93,12 +93,78 @@ job:
       person_to_greet: var.name
 ```
 Another component of an orca workflow are `control structures`. Control structures allow for
-control flow type operations to be performed by writing yaml describing the nature of the control
-flow. A simple example:
+control flow type operations to be performed on a subset of tasks by writing yaml describing the nature of the control
+flow.
+There are four kinds of control structures in orca.
 
--- TODO
+* if control
+* for control
+* switch control
+* fork control
+----------------
+## If Structures
+```yaml
+#Example of a if condition object
+if: 5 > 0
+do:
+  - task: cond_task_1
+    python: print('hello condition!')
+```
+`if` structures contain two required top level properties `if` which describes the condition and `do` 
+the list of `tasks` to execute.
+---------
+## For structures
+```yaml
+for: i, range(0,10)
+do:
+  - task: print_i
+    python: print(counter)
+    inputs:
+      counter: i
 
+```
+`for` control structures also contain two required properties they are : `for` and `do`.
+The value of the `for` property must be defined as `var,expression`
+-----
+## Switch structures
+```yaml
+switch: 1
+1:
+  - task: start5_1
+    python: var.afile
+  - task: start5_2
+    python: var.afile
+2:
+  - task: start1_1
+    python: var.afile
+  - task: start1_2
+    python: var.afile
+default:
+  - task: default
+    python: var.afile
+```
+`switch` statements require a `switch` and `default` properties. The `default` properties is the set of tasks to run given that
+the switch condition does not resolve to a case. The `switch` property value can be be a variable thats evaluated at the time the switch block
+is reached.
 
+## Fork structures
+```yaml
+fork:     
+   # first group of tasks
+   -  - task: start1
+        python: var.afile
+      - task: start4
+        python: var.afile
+     # second group      
+   -  - task: start2
+        python: var.afile
+     # third group     
+   -  - task: start3
+        python: var.afile
+
+```
+
+A Fork structure is an array, of `task` lists. each element in the topmost array is executed in parallel.
 # Commands
 Orca currently provides a concise set of commands for running workflows.
 

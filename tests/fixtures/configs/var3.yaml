@@ -8,20 +8,22 @@ var:
   list: ['a','b','c']
   
 job:
-  - for v, range(1, 10): 
-    - task: ex
-      python: |
-            assert isinstance(count, int), "Not int"
-            assert count >=1 and count <10, "invalid counter {0}".format(count)
-      inputs:
-        count: v
+  - for: v, range(1, 10)
+    do:
+      - task: ex
+        python: |
+              assert isinstance(count, int), "Not int"
+              assert count >=1 and count <10, "invalid counter {0}".format(count)
+        inputs:
+          count: v
 
-  - for v, var.list: 
-    - task: ex1
-      python: |
-            assert isinstance(item, str), "Not str"
-            assert item in ['a','b','c'], "invalid counter {0}".format(item)
-      inputs:
-        item: v
+  - for: v, var.list
+    do:
+      - task: ex1
+        python: |
+              assert isinstance(item, str), "Not str"
+              assert item in ['a','b','c'], "invalid counter {0}".format(item)
+        inputs:
+          item: v
         
     
