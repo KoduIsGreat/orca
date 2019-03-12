@@ -48,9 +48,7 @@ def _parse_anyof_validator(error: ValidationError):
 
         if context.validator == 'uniqueItems':
             return (context.path if context.path else None,
-                    "contains non-unique items, please remove duplicates from {}".format(
-                        context.instance
-                    )
+                    "contains non-unique items, please remove duplicates from {}".format(context.instance)
                     )
 
 
