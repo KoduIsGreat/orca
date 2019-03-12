@@ -1,5 +1,5 @@
-apiversion: orca/'1.0'
-
+apiVersion: '1.0'
+name: 'switch test'
 version: '0.1'
 dependencies:
   - os
@@ -10,9 +10,9 @@ var:
 job:
   - switch: var.select
     test5:
-      - task: start5_1
+      - task: start
         python: var.afile
-      - task: start5_2
+      - task: start1
         python: var.afile
     test1:
       - task: start1_1

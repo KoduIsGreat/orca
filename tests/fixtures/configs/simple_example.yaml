@@ -1,7 +1,7 @@
-apiversion: orca/'1.0'
+apiVersion: '1.0'
 
 version: '0.1'
-
+name: 'simple example test'
 var:
   value: 5
 

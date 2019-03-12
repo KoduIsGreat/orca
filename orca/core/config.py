@@ -6,16 +6,13 @@ from typing import List, Dict, TextIO
 
 from dotted.collection import DottedDict
 from ruamel import yaml
-from jsonschema import validate, ValidationError
-from jsonschema import Draft7Validator
-from orca.core.schema import schema
-
+from orca.config import schema
+from orca.core.errors import ConfigurationError
 log = logging.getLogger(__name__)
 
 # all payload data during processing. must be global!
 task = DottedDict()
 var = DottedDict()
-
 
 class OrcaException(Exception):
     """Orca base exception"""
@@ -36,23 +33,14 @@ class OrcaConfig(object):
             data = file.read()
             log.debug("Raw yaml: {0}".format(data))
 
-            # first pass: start with a valid the yaml file.
-
-            # NOQA
-            orig = yaml.load(data, Loader=yaml.Loader)
-            try:
-                validate(orig, schema, Draft7Validator)
-            except ValidationError as e:
-                log.error('Error Validating {0} : {1}'.format(file.name, e.message))
-                raise OrcaConfigException('Error Validating {} : '.format(file.name), e)
-
+            # first pass: start by validating the yaml file against the schema version.
+            orig = schema.check(file.name, data)
             # processing single quote string literals: " ' '
             repl = r"^(?P<key>\s*[^#:]*):\s+(?P<value>['].*['])\s*$"
             fixed_data = re.sub(repl, '\g<key>: "\g<value>"',
                                 data, flags=re.MULTILINE)
             log.debug("Processed yaml: {0}".format(fixed_data))
-
-            # second pass: do it.
+            # second pass: appropriately quote strings in the yaml file.
             config = yaml.load(fixed_data, Loader=yaml.Loader)
 
             if log.isEnabledFor(logging.DEBUG):  # to avoid always dump json
@@ -62,7 +50,7 @@ class OrcaConfig(object):
             return config
         except yaml.YAMLError as e:
             log.error(e)
-            raise OrcaConfigException("error loading yaml file.")
+            raise ConfigurationError("error loading yaml file.")
 
     @staticmethod
     def create(file: TextIO, args: List[str] = None) -> 'OrcaConfig':
@@ -101,7 +89,7 @@ class OrcaConfig(object):
                 exec("import " + dep, globals())
                 log.debug("importing dependency: '{0}'".format(dep))
             except Exception as e:
-                raise OrcaConfigException(
+                raise ConfigurationError(
                     "Cannot not resolve the '{0}' dependency".format(dep), e)
 
     def __set_vars(self, variables: Dict, args: List[str]) -> None:
@@ -109,12 +97,12 @@ class OrcaConfig(object):
         log.debug("setting job variables:")
         for key, val in variables.items():
             if not key.isidentifier():
-                raise OrcaConfigException(
+                raise ConfigurationError(
                     'Invalid variable identifier: "{0}"'.format(key))
             try:
                 exec("var.{0}={1}".format(key, val), globals())
                 log.debug(
                     "  set var.{0} = {1} -> {2}".format(key, str(val), str(eval("var." + key))))
             except Exception as e:
-                raise OrcaConfigException(
+                raise ConfigurationError(
                     "Cannot set variable: {0}".format(key))

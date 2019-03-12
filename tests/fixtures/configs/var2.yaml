@@ -1,9 +1,9 @@
 # test var declaration as inputs
 
-apiversion: orca/'1.0'
+apiVersion: '1.0'
 
 version: '0.1'
-
+name: 'test var declartion in inputs'
 job:
   - task: example
     python: |

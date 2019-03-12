@@ -1,7 +1,7 @@
-apiversion: orca/'1.0'
+apiVersion: '1.0'
 
 version: '0.1.1'
-
+name: 'for object test'
 schedule: 00 09-18 * * 1-5
 
 dependencies: 
@@ -23,6 +23,8 @@ job:
         inputs:
           excited: var.counter
           name: var.greetTo
+        outputs:
+          - excitement_level
         
   - task: last 
     python: 'a.py'
