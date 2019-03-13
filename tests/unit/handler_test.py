@@ -2,7 +2,7 @@ import unittest
 from tests.mocks import tasks
 from orca.core.tasks import OrcaTask
 from orca.core.handler import ExecutionHandler, ValidationHandler
-from orca.core.config import OrcaConfigException
+from orca.core.errors import ConfigurationError
 
 
 class OrcaHandlerTest(unittest.TestCase):
@@ -44,5 +44,5 @@ class OrcaHandlerTest(unittest.TestCase):
         mock = tasks.bad_file_path_python
         h = ValidationHandler()
         _task = OrcaTask(mock, h.resolve_task_inputs(mock))
-        with self.assertRaises(OrcaConfigException):
+        with self.assertRaises(ConfigurationError):
             h.handle_python(_task)

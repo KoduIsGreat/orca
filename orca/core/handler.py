@@ -5,7 +5,7 @@ import json
 from csip import Client
 from typing import List, Dict
 from orca.core.tasks import OrcaTask
-from orca.core.config import task, log, OrcaConfig, OrcaConfigException
+from orca.core.config import task, log, OrcaConfig
 from orca.core.ledger import Ledger
 from concurrent.futures import ThreadPoolExecutor
 from dotted.collection import DottedCollection
@@ -37,7 +37,9 @@ def handle_csip_result(response: Dict, outputs: List, name: str) -> Dict:
             try:
                 d[name + "." + k] = v['value']
             except KeyError as e:
-                raise OrcaConfigException("Output not found: {0}".format(k), e)
+                raise ExecutionError(
+                    "Output variable {0} not found, message: {1}," +
+                    "\n the response from the task was: {2}".format(k, e, json.dumps(response, indent=2)))
     return d
 
 
@@ -47,7 +49,7 @@ def handle_python_result(outputs: List, name: str, task_locals: Dict) -> Dict:
         try:
             d[name + '.' + out] = task_locals[out]
         except KeyError as e:
-            raise OrcaConfigException("Task output not found: {0}".format(out), e)
+            raise ExecutionError("Task output not found: {0}".format(out), e)
     return d
 
 

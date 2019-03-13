@@ -6,22 +6,13 @@ from typing import List, Dict, TextIO
 
 from dotted.collection import DottedDict
 from ruamel import yaml
-from orca.config import schema
+from orca.schema.validation import validate
 from orca.core.errors import ConfigurationError
 log = logging.getLogger(__name__)
 
 # all payload data during processing. must be global!
 task = DottedDict()
 var = DottedDict()
-
-class OrcaException(Exception):
-    """Orca base exception"""
-    pass
-
-
-class OrcaConfigException(OrcaException):
-    """Orca configuration exception"""
-    pass
 
 
 class OrcaConfig(object):
@@ -30,11 +21,8 @@ class OrcaConfig(object):
     @staticmethod
     def __process_config(file: TextIO) -> Dict:
         try:
-            data = file.read()
-            log.debug("Raw yaml: {0}".format(data))
-
             # first pass: start by validating the yaml file against the schema version.
-            orig = schema.check(file.name, data)
+            data = validate(file)
             # processing single quote string literals: " ' '
             repl = r"^(?P<key>\s*[^#:]*):\s+(?P<value>['].*['])\s*$"
             fixed_data = re.sub(repl, '\g<key>: "\g<value>"',
@@ -50,7 +38,11 @@ class OrcaConfig(object):
             return config
         except yaml.YAMLError as e:
             log.error(e)
-            raise ConfigurationError("error loading yaml file.")
+            raise ConfigurationError("error loading yaml file.", e)
+        except ConfigurationError as e:
+            # lets capture it log it and reraise it.
+            log.error(e)
+            raise e
 
     @staticmethod
     def create(file: TextIO, args: List[str] = None) -> 'OrcaConfig':

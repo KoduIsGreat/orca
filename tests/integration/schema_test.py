@@ -1,5 +1,4 @@
 from unittest import TestCase
-from orca.core.config import OrcaConfig, OrcaConfigException  # noqa: F401
 from orca.core.errors import ConfigurationError
 from tests.util import get_config
 
@@ -28,16 +27,20 @@ class OrcaSchemaTest(TestCase):
         assert config is not None
 
     def test_duplicate_kinds(self):
-        with self.assertRaises(ConfigurationError):
+        with self.assertRaises(ConfigurationError) as e:
             config = get_config('duplicate_kinds.yaml')
             assert config is not None
+            print(e)
 
     def test_duplicate_outputs(self):
-        with self.assertRaises(ConfigurationError):
+        with self.assertRaises(ConfigurationError) as e:
+
             config = get_config('duplicate_outputs.yaml')
             assert config is not None
+            print(e)
 
     def test_nested_dups(self):
-        with self.assertRaises(ConfigurationError):
+        with self.assertRaises(ConfigurationError) as e:
             config = get_config('nested_duplicates.yaml')
             assert config is not None
+            print(e)
