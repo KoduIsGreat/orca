@@ -53,10 +53,11 @@ class OrcaConfig(object):
         # the yaml file (if used)
 
         self.file = file
+        self.api_version = config.get('apiVersion')
         self.conf = config.get('conf', {})
         self.deps = config.get('dependencies', [])
         self.var = config.get('var', {})
-        self.job = config['job']
+        self.job = config.get('job')
         self.version = config.get('version', '0.0')
         self.name = config.get('name', file)
 
@@ -97,4 +98,4 @@ class OrcaConfig(object):
                     "  set var.{0} = {1} -> {2}".format(key, str(val), str(eval("var." + key))))
             except Exception as e:
                 raise ConfigurationError(
-                    "Cannot set variable: {0}".format(key))
+                    "Cannot set variable: {0}".format(key), e)

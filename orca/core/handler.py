@@ -349,23 +349,35 @@ class ValidationHandler(OrcaHandler):
     def __init__(self):
         super().__init__()
 
-    def handle_csip(self, task: OrcaTask):
-        r = requests.head(task.csip)
+    def handle_csip(self, _task: OrcaTask):
+        r = requests.head(_task.csip)
         if r.status_code >= 400:
             raise ConfigurationError(
-                'CSIP url not accessible: "{0}"'.format(task.csip))
+                'Task {0} defines a CSIP endpoint that is not accessible: "{1}"'.format(_task.name, _task.csip)
+            )
 
-    def handle_http(self, task: OrcaTask):
-        r = requests.head(task.http)
+    def handle_http(self, _task: OrcaTask):
+        r = requests.head(_task.http)
         if r.status_code >= 400:
             raise ConfigurationError(
-                'Http url not accessible: "{0}"'.format(task.http))
+                'Task {0} defines a Http url that is not accessible: "{1}"'.format(_task.name, _task.http)
+            )
 
-    def handle_bash(self, task: OrcaTask):
-        self._resolve_file_path(task.bash, ".sh")
+    def handle_bash(self, _task: OrcaTask):
+        try:
+            self._resolve_file_path(_task.bash, ".sh")
+        except ConfigurationError as e:
+            raise ConfigurationError(
+                'Task {0} defines a bash script that cannot be found: {1}'.format(_task.name, _task.bash), e
+            )
 
-    def handle_python(self, task: OrcaTask):
-        self._resolve_file_path(task.python, ".py")
+    def handle_python(self, _task: OrcaTask):
+        try:
+            self._resolve_file_path(_task.python, ".py")
+        except ConfigurationError as e:
+            raise ConfigurationError(
+                'Task {0} defines a python script that cannot be found: {1}'.format(_task.name, _task.python), e
+            )
 
 
 #############################################
