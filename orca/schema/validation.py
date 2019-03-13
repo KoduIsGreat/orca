@@ -12,11 +12,22 @@ LATEST_SCHEMA_VERSION = '1.0'
 AVAILABLE_SCHEMA_VERSIONS = ['1.0']
 
 
-def get_schema_location():
+def _get_schema_location():
+    """
+    gets the dir of the schemas
+    :return:  the schema directory
+    """
     return os.path.dirname(os.path.abspath(__file__))
 
 
-def handle_errors(errors: List[ValidationError], fmt_err_func, filename):
+def _handle_errors(errors: List[ValidationError], fmt_err_func, filename):
+    """
+    Handles the tree of errors provided by jsonschema and formats them.
+    :param errors:
+    :param fmt_err_func:
+    :param filename:
+    :return:  exits if no errors exist
+    """
     errors = list(sorted(errors, key=str))
     if not errors:
         return
@@ -73,11 +84,11 @@ def _parse_anyof_validator(error: ValidationError):
             return context.absolute_path, 'An invalid type was declared: {0}'.format(context.message)
 
 
-def handle_generic_error(error):
+def _handle_generic_error(error):
     """
-    Handle top-level orca document errors
-    :param error:
-    :return:
+    Handles a single ValidationError produced by jsonschema
+    :param error: the error
+    :return: a formatted error message
     """
     error_msg = error.message
     if error.validator == 'required':
@@ -123,16 +134,16 @@ def validate(file: TextIO):
             " the latest current version is {0}'".format(LATEST_SCHEMA_VERSION), e
         )
 
-    schema_file = os.path.join(get_schema_location(), "ORCA_SCHEMA_{0}.json".format(version))
-    if os.path.isfile(schema_file):  # check if the schema file exists.
+    schema_file = os.path.join(_get_schema_location(), "ORCA_SCHEMA_{0}.json".format(version))
+    try:  # check if the schema file exists.
         with open(schema_file) as fp:
             schema_data = json.load(fp)
             validator = Draft7Validator(schema_data)
             errors = list(validator.iter_errors(orca_data))
-            handle_errors(errors, handle_generic_error, fp.name)
+            _handle_errors(errors, _handle_generic_error, fp.name)
             return data
-    else:
+    except FileNotFoundError as e:
         raise ConfigurationError(
             "'The version {0}, is an invalid schema version. It did not match one of the" +
-            " supported schema versions: {1}'".format(version, AVAILABLE_SCHEMA_VERSIONS)
+            " supported schema versions: {1}'".format(version, AVAILABLE_SCHEMA_VERSIONS), e
         )
