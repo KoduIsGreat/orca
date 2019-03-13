@@ -8,7 +8,7 @@ setuptools.setup(
     author_email="",
     install_requires=[
         "csip ==  0.8.13",
-        "jsonschema == 2.0",
+        "jsonschema == 3.0.1",
         "click == 7.0",
         "click-log == 0.3.2",
         "dotted == 0.1.8",
