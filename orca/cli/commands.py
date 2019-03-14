@@ -1,12 +1,13 @@
 
 import orca as o   # must be renamed
-from orca.core.config import OrcaConfig, OrcaException, log
+from orca.core.config import OrcaConfig, log
 from orca.core.handler import ExecutionHandler
 from orca.core.handler import ValidationHandler
 from orca.core.handler import DotfileHandler
 from orca.core.ledger import JSONFileLedger
 from orca.core.ledger import MongoLedger
 from orca.core.ledger import KafkaLedger
+from orca.core.errors import OrcaError
 
 import click
 import click_log
@@ -80,7 +81,7 @@ def run(ledger_json, ledger_mongo, ledger_kafka, file, args):
         config = OrcaConfig.create(file, args)
         executor = ExecutionHandler(ledger)
         executor.handle(config)
-    except OrcaException as e:
+    except OrcaError as e:
         log.error(e)
 
 
@@ -95,7 +96,7 @@ def validate(file, args):
         config = OrcaConfig.create(file, args)
         validator = ValidationHandler()
         validator.handle(config)
-    except OrcaException as e:
+    except OrcaError as e:
         log.error(e)
 
 
@@ -117,5 +118,5 @@ def todot(file, args):
         config = OrcaConfig.create(file, args)
         printer = DotfileHandler()
         printer.handle(config)
-    except OrcaException as e:
+    except OrcaError as e:
         log.error(e)
