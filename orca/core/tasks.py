@@ -1,9 +1,5 @@
 from typing import Dict, List
-from orca.core.config import OrcaException
-
-
-class OrcaTaskException(OrcaException):
-    pass
+from orca.core.errors import ConfigurationError
 
 
 class OrcaTask(object):
@@ -18,7 +14,7 @@ class OrcaTask(object):
         try:
             return self.task_data.get('task')
         except KeyError as e:
-            raise OrcaTaskException("Missing Task Identifier: ", e)
+            raise ConfigurationError("Missing Task Identifier: ", e)
 
     @property
     def locals(self) -> Dict:

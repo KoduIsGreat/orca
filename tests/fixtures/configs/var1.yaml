@@ -1,9 +1,9 @@
 # test variable declaration in vars
 
-apiversion: orca/'1.0'
+apiVersion: '1.0'
 
 version: '0.1'
-
+name: 'test variable declaration'
 var:
   a: 'crazy'
   b: 10

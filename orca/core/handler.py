@@ -5,12 +5,12 @@ import json
 from csip import Client
 from typing import List, Dict
 from orca.core.tasks import OrcaTask
-from orca.core.config import task, log, OrcaConfig, OrcaConfigException
+from orca.core.config import task, log, OrcaConfig
 from orca.core.ledger import Ledger
 from concurrent.futures import ThreadPoolExecutor
 from dotted.collection import DottedCollection
 from abc import ABCMeta, abstractmethod
-
+from orca.core.errors import ConfigurationError, ExecutionError
 from orca.core.config import var  # noqa: F401
 
 
@@ -37,7 +37,9 @@ def handle_csip_result(response: Dict, outputs: List, name: str) -> Dict:
             try:
                 d[name + "." + k] = v['value']
             except KeyError as e:
-                raise OrcaConfigException("Output not found: {0}".format(k), e)
+                raise ExecutionError(
+                    "Output variable {0} not found, message: {1}," +
+                    "\n the response from the task was: {2}".format(k, e, json.dumps(response, indent=2)))
     return d
 
 
@@ -47,7 +49,7 @@ def handle_python_result(outputs: List, name: str, task_locals: Dict) -> Dict:
         try:
             d[name + '.' + out] = task_locals[out]
         except KeyError as e:
-            raise OrcaConfigException("Task output not found: {0}".format(out), e)
+            raise ExecutionError("Task output not found: {0}".format(out), e)
     return d
 
 
@@ -61,11 +63,11 @@ class OrcaHandler(metaclass=ABCMeta):
 
     def _check_symtable(self, name: str, task: Dict):
         if name is None or not name.isidentifier():
-            raise OrcaConfigException('Invalid task name: "{0}"'.format(name))
+            raise ConfigurationError('Invalid task name: "{0}"'.format(name))
         task_id = id(task)
         # check against the task dict id to support loops.
         if self.symtable.get(name, task_id) != task_id:
-            raise OrcaConfigException("Duplicate task name: {0}".format(name))
+            raise ConfigurationError("Duplicate task name: {0}".format(name))
         self.symtable[name] = task_id
 
     def handle(self, config: OrcaConfig) -> None:
@@ -92,7 +94,7 @@ class OrcaHandler(metaclass=ABCMeta):
                 log.debug(" ---- switch: '{}'".format(step['switch']))
                 self._handle_switch(step)
             else:
-                raise OrcaConfigException(
+                raise ConfigurationError(
                     'Invalid step in job: "{0}"'.format(node))
 
     def close(self):
@@ -125,7 +127,7 @@ class OrcaHandler(metaclass=ABCMeta):
         elif 'python' in task_dict:
             return self.handle_python
         else:
-            raise OrcaConfigException(
+            raise ConfigurationError(
                 'Invalid task type: "{0}"'.format(task_dict))
 
     def resolve_task_inputs(self, task_dict: Dict) -> Dict:
@@ -159,7 +161,7 @@ class OrcaHandler(metaclass=ABCMeta):
             else:
                 if name.endswith(ext):
                     # this should be a file but it's not.
-                    raise OrcaConfigException(
+                    raise ConfigurationError(
                         'File not found: "{0}"'.format(name))
                 return None
 
@@ -214,12 +216,12 @@ class OrcaHandler(metaclass=ABCMeta):
         var_expr = condition_block['for']
         i = var_expr.find(",")
         if i == -1:
-            raise OrcaConfigException(
+            raise ConfigurationError(
                 'Invalid "for" expression: "{0}"'.format(var_expr))
 
         var = var_expr[:i]
         if not var.isidentifier():
-            raise OrcaConfigException(
+            raise ConfigurationError(
                 'Not a valid identifier: "{0}"'.format(var))
 
         expr = var_expr[i + 1:]
@@ -271,7 +273,7 @@ class ExecutionHandler(OrcaHandler):
             client = client.execute(_task.csip)
             return handle_csip_result(client.data, _task.outputs, _task.name)
         except requests.exceptions.HTTPError as e:
-            raise OrcaConfigException(e)
+            raise ExecutionError(e)
 
     def handle_http(self, _task: OrcaTask) -> Dict:
         url = _task.http
@@ -280,7 +282,7 @@ class ExecutionHandler(OrcaHandler):
         headers = _task.config.get('header')
         content_type = headers.get('content-type', 'text/plain')
         if 'method' not in _task.config:
-            raise OrcaConfigException(
+            raise ConfigurationError(
                 "requests service operator must include method: service {0}".format(name))
         if _task.config.get('method') == 'GET':
             return handle_service_result(json.loads(requests.get(url, params=_task.config.get('params', None)).content),
@@ -347,23 +349,35 @@ class ValidationHandler(OrcaHandler):
     def __init__(self):
         super().__init__()
 
-    def handle_csip(self, task: OrcaTask) -> Dict:
-        r = requests.head(task.csip)
+    def handle_csip(self, _task: OrcaTask):
+        r = requests.head(_task.csip)
         if r.status_code >= 400:
-            raise OrcaConfigException(
-                'CSIP url not accessible: "{0}"'.format(task.csip))
+            raise ConfigurationError(
+                'Task {0} defines a CSIP endpoint that is not accessible: "{1}"'.format(_task.name, _task.csip)
+            )
 
-    def handle_http(self, task: OrcaTask) -> Dict:
-        r = requests.head(task.http)
+    def handle_http(self, _task: OrcaTask):
+        r = requests.head(_task.http)
         if r.status_code >= 400:
-            raise OrcaConfigException(
-                'Http url not accessible: "{0}"'.format(task.http))
+            raise ConfigurationError(
+                'Task {0} defines a Http url that is not accessible: "{1}"'.format(_task.name, _task.http)
+            )
 
-    def handle_bash(self, task: OrcaTask) -> Dict:
-        self._resolve_file_path(task.bash, ".sh")
+    def handle_bash(self, _task: OrcaTask):
+        try:
+            self._resolve_file_path(_task.bash, ".sh")
+        except ConfigurationError as e:
+            raise ConfigurationError(
+                'Task {0} defines a bash script that cannot be found: {1}'.format(_task.name, _task.bash), e
+            )
 
-    def handle_python(self, task: OrcaTask) -> Dict:
-        self._resolve_file_path(task.python, ".py")
+    def handle_python(self, _task: OrcaTask):
+        try:
+            self._resolve_file_path(_task.python, ".py")
+        except ConfigurationError as e:
+            raise ConfigurationError(
+                'Task {0} defines a python script that cannot be found: {1}'.format(_task.name, _task.python), e
+            )
 
 
 #############################################

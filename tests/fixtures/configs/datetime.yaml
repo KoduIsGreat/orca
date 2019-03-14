@@ -1,6 +1,7 @@
-apiversion: orca/'1.0'
+apiVersion: '1.0'
 
 version: '0.1'
+name: 'complex example test'
 var:
   forecast: 0
   nomadsUrl: 'https://nomads.ncep.noaa.gov/pub/data/nccf/com/nwm/prod/nwm.{0}/short_range/'

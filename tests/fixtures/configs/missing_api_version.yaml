@@ -1,6 +1,5 @@
-apiVersion: '1.0'
 version: '0.1'
-name: 'if object test'
+name: 'nested duplicates'
 var:
   value: 5
 
@@ -12,6 +11,9 @@ job:
     do:
       - task: conditional echo
         bash: echo wow we're in a condition!
+        output:
+          - a
+          - a
 
   - task: last echo
     bash: echo done

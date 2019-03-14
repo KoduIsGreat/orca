@@ -6,22 +6,13 @@ from typing import List, Dict, TextIO
 
 from dotted.collection import DottedDict
 from ruamel import yaml
-
+from orca.schema.validation import validate
+from orca.core.errors import ConfigurationError
 log = logging.getLogger(__name__)
 
 # all payload data during processing. must be global!
 task = DottedDict()
 var = DottedDict()
-
-
-class OrcaException(Exception):
-    """Orca base exception"""
-    pass
-
-
-class OrcaConfigException(OrcaException):
-    """Orca configuration exception"""
-    pass
 
 
 class OrcaConfig(object):
@@ -30,26 +21,14 @@ class OrcaConfig(object):
     @staticmethod
     def __process_config(file: TextIO) -> Dict:
         try:
-            data = file.read()
-            log.debug("Raw yaml: {0}".format(data))
-
-            # first pass: start with a valid the yaml file.
-
-            # NOQA
-            orig = yaml.load(data, Loader=yaml.Loader)
-            # try:
-            #     validate(orig, schema)
-            # except ValidationError as e:
-            #     log.error('Error Validating {0} : {1}'.format(file.name, e.message))
-            #     raise OrcaConfigException('Error Validating {} : '.format(file.name), e)
-
+            # first pass: start by validating the yaml file against the schema version.
+            data = validate(file)
             # processing single quote string literals: " ' '
             repl = r"^(?P<key>\s*[^#:]*):\s+(?P<value>['].*['])\s*$"
             fixed_data = re.sub(repl, '\g<key>: "\g<value>"',
                                 data, flags=re.MULTILINE)
             log.debug("Processed yaml: {0}".format(fixed_data))
-
-            # second pass: do it.
+            # second pass: appropriately quote strings in the yaml file.
             config = yaml.load(fixed_data, Loader=yaml.Loader)
 
             if log.isEnabledFor(logging.DEBUG):  # to avoid always dump json
@@ -59,7 +38,11 @@ class OrcaConfig(object):
             return config
         except yaml.YAMLError as e:
             log.error(e)
-            raise OrcaConfigException("error loading yaml file.")
+            raise ConfigurationError("error loading yaml file.", e)
+        except ConfigurationError as e:
+            # lets capture it log it and reraise it.
+            log.error(e)
+            raise e
 
     @staticmethod
     def create(file: TextIO, args: List[str] = None) -> 'OrcaConfig':
@@ -70,10 +53,11 @@ class OrcaConfig(object):
         # the yaml file (if used)
 
         self.file = file
+        self.api_version = config.get('apiVersion')
         self.conf = config.get('conf', {})
         self.deps = config.get('dependencies', [])
         self.var = config.get('var', {})
-        self.job = config['job']
+        self.job = config.get('job')
         self.version = config.get('version', '0.0')
         self.name = config.get('name', file)
 
@@ -98,7 +82,7 @@ class OrcaConfig(object):
                 exec("import " + dep, globals())
                 log.debug("importing dependency: '{0}'".format(dep))
             except Exception as e:
-                raise OrcaConfigException(
+                raise ConfigurationError(
                     "Cannot not resolve the '{0}' dependency".format(dep), e)
 
     def __set_vars(self, variables: Dict, args: List[str]) -> None:
@@ -106,12 +90,12 @@ class OrcaConfig(object):
         log.debug("setting job variables:")
         for key, val in variables.items():
             if not key.isidentifier():
-                raise OrcaConfigException(
+                raise ConfigurationError(
                     'Invalid variable identifier: "{0}"'.format(key))
             try:
                 exec("var.{0}={1}".format(key, val), globals())
                 log.debug(
                     "  set var.{0} = {1} -> {2}".format(key, str(val), str(eval("var." + key))))
             except Exception as e:
-                raise OrcaConfigException(
-                    "Cannot set variable: {0}".format(key))
+                raise ConfigurationError(
+                    "Cannot set variable: {0}".format(key), e)

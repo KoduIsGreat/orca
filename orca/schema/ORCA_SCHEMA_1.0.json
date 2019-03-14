@@ -1,0 +1,123 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "orca-1.0",
+    "type": "object",
+    "required": ["apiVersion","version","name"],
+    "properties": {
+        "apiVersion": {"type": "string"},
+        "version": {"type": "string"},
+        "name": {"type": "string"},
+        "authors": {
+            "type": "array",
+            "items": { "type": "string"}
+        },
+        "var": {"$ref": "#/definitions/alphaNumericProperties"},
+        "job": {"$ref": "#/definitions/job"}
+    },
+    
+    "definitions": {
+        "alphaNumericProperties": {
+            "$id": "#/definitions/alphaNumericProperties",
+            "type": "object",
+            "patternProperties": {
+                "[a-zA-Z0-9]*$": {
+                    "type": ["string","number","array", "boolean", "object"]
+                }
+            }
+        },
+        "listOfUniqueStrings":{
+            "$id": "#/definitions/listOfUniqueStrings",
+            "type": "array",
+            "items": {"type": "string"},
+            "uniqueItems": true
+        },
+        "task": {
+            "$id": "#/definitions/task",
+            "type": "object",
+            "required": ["task"],
+            "oneOf": [
+                {"required": ["bash"]},
+                {"required": ["python"]},
+                {"required": ["http"]},
+                {"required": ["csip"]}
+            ],
+            "properties":{
+                "task": {"type": "string"},
+                "description": {"type": "string"},
+                
+                "bash": {"type": "string"},
+                "python": {"type": "string"},
+                "http": {"type": "string"},
+                "csip": {"type": "string"},
+
+                "inputs": {"$ref": "#/definitions/alphaNumericProperties"},
+                "config": {"$ref": "#/definitions/alphaNumericProperties"},
+                "outputs": {"$ref": "#/definitions/listOfUniqueStrings"}
+            },
+            "additionalProperties": false
+        },
+        "if": {
+            "$id": "#/definitions/if",
+            "type":"object",
+            "required": ["if", "do"],
+            "properties": {
+                "if": {"type": "string"},
+                "description": {"type": "string"},
+                "do": {"$ref": "#/definitions/job"}
+            },
+
+            "additionalProperties": false
+        },
+        "for": {
+            "$id": "#/definitions/for",
+            "type": "object",
+            "required": ["for", "do"],
+            "properties":{
+                "for": {"type": "string"},
+                "do": {"$ref": "#/definitions/job"}
+            },
+
+            "additionalProperties": false
+        },
+        "fork": {
+            "$id": "#/definitions/fork",
+            "type": "object",
+            "required": ["fork"],
+            "properties": {
+                "fork": {
+                    "type": "array",
+                    "items": { "$ref": "#/definitions/job"},
+                    "additionalItems": false
+                }
+            },
+
+            "additionalProperties": false
+        },
+        "switch": {
+            "$id": "#/definitions/switch",
+            "type": "object",
+            "required": ["switch", "default"],
+            "properties": {
+                "switch": {"type": "string"},
+                "default": {"$ref": "#/definitions/job"}
+            },
+
+            "additionalProperties": {"$ref": "#/definitions/job"}
+        },
+        "job": {
+            "$id": "#/definitions/job",
+            "type": "array",
+            "items": {
+                "anyOf": [
+                    {"$ref": "#/definitions/task"},
+                    {"$ref": "#/definitions/if"},
+                    {"$ref": "#/definitions/for"},
+                    {"$ref": "#/definitions/switch"},
+                    {"$ref": "#/definitions/fork"},
+                    {"$ref": "#/definitions/job"}
+                ]
+            },
+            "additionalItems": false
+        }
+    }
+}
