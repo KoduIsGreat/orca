@@ -13,7 +13,7 @@ job:
     do:
       - task: conditional echo
         bash: echo wow we're in a condition!
-        outputs:
+        output:
           - a
           - a
 

@@ -20,7 +20,9 @@ setuptools.setup(
     description="A cli tool for orchestrating model workflows",
     long_description=open('README.md').read(),
     url="https://github.com/KoduIsGreat/orca.git",
-    packages=setuptools.find_packages(),
+    include_package_data=True,
+    package_data={'orca.schema': ['*.json']},
+    packages=setuptools.find_packages(exclude=['tests']),
     entry_points={
         'setuptools.installation': [
             'eggsecutable = orca.cli.commands:orca'
