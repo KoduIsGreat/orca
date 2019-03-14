@@ -94,6 +94,8 @@ def _parse_anyof_validator(error: ValidationError):
         if error.validator == 'type':
             return error.absolute_path, 'An invalid type was declared: {0}'.format(error.message)
 
+        return error.absolute_path, error.message
+
 
 def _handle_generic_error(error):
     """
