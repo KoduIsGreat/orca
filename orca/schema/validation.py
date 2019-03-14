@@ -3,8 +3,9 @@ import logging
 import os
 import json
 from ruamel import yaml
-from typing import List, TextIO
+from typing import List, TextIO, Dict
 from orca.core.errors import ConfigurationError
+import itertools
 
 log = logging.getLogger(__name__)
 
@@ -41,16 +42,8 @@ def _handle_errors(errors: List[ValidationError], fmt_err_func, filename):
     )
 
 
-def _parse_oneof_validator(error: ValidationError):
-    """
-    Parse jsonschema oneOf Validator
-    reason about which sub schemas and validators we are interested in.
-    :param error: the validation error with a validator of oneOf
-    :return:  path: the absolute path of the most relevant error, message: the error message for the most relevant error
-    """
-    for context in error.context:
-        if context.validator == 'required':
-            return context.absolute_path, context.message
+def _dump_section(section: Dict):
+    return yaml.dump(section)
 
 
 def _parse_anyof_validator(error: ValidationError):
@@ -63,25 +56,43 @@ def _parse_anyof_validator(error: ValidationError):
     :return:  path: the path to the error in the yaml tree,
     error_msg: the most relevant error_message for this branch of the tree.
     """
-    for context in error.context:
 
-        if context.validator == 'anyOf':
-            path, error_msg = _parse_anyof_validator(error)
-            return path, error_msg
+    def from_contexts(contexts):
+        _errors = []
+        for e in contexts:
+            if e.validator == 'anyOf':
+                _errors.extend(from_contexts(e.context))
+            else:
+                _errors.append(e)
+        return _errors
 
-        if context.validator == 'oneOf':
-            path, error_msg = _parse_oneof_validator(error)
-            return path, error_msg
+    # recursively walk down the tree gathering nested exceptions deep in the workflow graph
+    nested_errors = list(itertools.chain.from_iterable(
+        [from_contexts(e.context) for e in error.context if e.validator == 'anyOf'])
+    )
+    # if we have nested errors, its likely that the real error is in there otherwise use top level errors
+    errors = error.context if not nested_errors else nested_errors
+    for error in errors:
 
-        if context.validator == 'required':
-            return context.absolute_path, context.message
-
-        if context.validator == 'uniqueItems':
-            return (context.absolute_path if context.path else None,
-                    "contains non-unique items, please remove duplicates from {}".format(context.instance)
+        if error.validator == 'oneOf':
+            return (error.absolute_path,
+                    'The task "{0}" defines an incorrect kind, or more than one kind\n error message: {1}'.format(
+                        error.instance.get('task'), error.message)
                     )
-        if context.validator == 'type':
-            return context.absolute_path, 'An invalid type was declared: {0}'.format(context.message)
+
+        if error.validator == 'required':
+            return error.absolute_path, error.message
+
+        if error.validator == 'additionalProperties':
+            return error.absolute_path, error.message
+
+        if error.validator == 'uniqueItems':
+            return (error.absolute_path if error.path else None,
+                    "contains non-unique items, please remove duplicates from {}".format(error.instance)
+                    )
+
+        if error.validator == 'type':
+            return error.absolute_path, 'An invalid type was declared: {0}'.format(error.message)
 
 
 def _handle_generic_error(error):
@@ -105,12 +116,7 @@ def _handle_generic_error(error):
 
     if error.validator == 'anyOf':
         path, error_msg = _parse_anyof_validator(error)
-        msg_format = 'Error validating job at {0}, error message: {1}'
-        return msg_format.format(path, error_msg)
-
-    if error.validator == 'oneOf':
-        path, error_msg = _parse_oneof_validator(error)
-        msg_format = 'The task located at {0}, does not define a valid kind: {1}'
+        msg_format = 'Error validating job at {0}\n error message: {1}'
         return msg_format.format(path, error_msg)
 
 
@@ -125,13 +131,12 @@ def validate(file: TextIO):
     log.debug("Raw yaml: {0}".format(data))
 
     orca_data = yaml.load(data, yaml.Loader)
-    print(json.dumps(orca_data, indent=2))
     try:
         version = orca_data['apiVersion']
-    except KeyError as e:
+    except KeyError:
         raise ConfigurationError(
             "'apiVersion is missing. An API version must be specified on an orca document," +
-            " the latest current version is {0}'".format(LATEST_SCHEMA_VERSION), e
+            " the latest current version is {0}'".format(LATEST_SCHEMA_VERSION)
         )
 
     schema_file = os.path.join(_get_schema_location(), "ORCA_SCHEMA_{0}.json".format(version))
@@ -140,10 +145,10 @@ def validate(file: TextIO):
             schema_data = json.load(fp)
             validator = Draft7Validator(schema_data)
             errors = list(validator.iter_errors(orca_data))
-            _handle_errors(errors, _handle_generic_error, fp.name)
+            _handle_errors(errors, _handle_generic_error, file.name)
             return data
-    except FileNotFoundError as e:
+    except FileNotFoundError:
         raise ConfigurationError(
-            "'The version {0}, is an invalid schema version. It did not match one of the" +
-            " supported schema versions: {1}'".format(version, AVAILABLE_SCHEMA_VERSIONS), e
+            "'The apiVersion {0}, is an invalid apiVersion version. It did not match one of the".format(version) +
+            " supported apiVersions: {0}'".format(AVAILABLE_SCHEMA_VERSIONS)
         )

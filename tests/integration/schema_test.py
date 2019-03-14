@@ -44,3 +44,13 @@ class OrcaSchemaTest(TestCase):
             config = get_config('nested_duplicates.yaml')
             assert config is not None
             print(e)
+
+    def test_missing_api_version(self):
+        with self.assertRaises(ConfigurationError):
+            config = get_config('missing_api_version.yaml')
+            assert config is not None
+
+    def test_missing_api_version(self):
+        with self.assertRaises(ConfigurationError):
+            config = get_config('invalid_api_version.yaml')
+            assert config is not None
