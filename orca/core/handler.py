@@ -282,9 +282,11 @@ class ExecutionHandler(OrcaHandler):
         inputs = _task.locals
         headers = _task.config.get('header')
         content_type = headers.get('content-type', 'text/plain')
+
         if 'method' not in _task.config:
             raise ConfigurationError(
                 "requests service operator must include method: service {0}".format(name))
+
         if _task.config.get('method') == 'GET':
             return handle_service_result(json.loads(requests.get(url, params=_task.config.get('params', None)).content),
                                          _task.outputs, name)

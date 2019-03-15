@@ -41,6 +41,8 @@ job:
       file: var.fileName
       forecast: var.forecast
       html: task.get_nomads.html
+    outputs:
+      - file_exists
 
   - if: task.scrape_html.file_exists
     do:
@@ -51,7 +53,8 @@ job:
           header:
             content-type: 'application/json'
         outputs:
-          - all
+          - type
+          - features
       - fork:
         - - task: get_ids
             python: |
