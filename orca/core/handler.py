@@ -2,6 +2,7 @@ import os
 import subprocess as subp
 import requests
 import json
+import re
 from csip import Client
 from typing import List, Dict
 from orca.core.tasks import OrcaTask
@@ -318,27 +319,52 @@ class ExecutionHandler(OrcaHandler):
             return o
         return {}
 
-    def handle_python(self, _task: OrcaTask) -> Dict:
+    def __get_call_string(self, config: Dict, script: str):
+        func_name = config.get('callable')
+        var_name = config.get('returns', '')
+        # match against a function definition string : def <funcname> ( args,...)
+        pattern = r'((?P<keyword>def)\s?(?P<function>\w+)\s?\((?P<args>(?P<arg>\w+(,\s?)?)+)\))'
+        # find all functions in the file
+        all_funcs = re.findall(pattern, script)
+        # take each function string and break it up into a dictionary so we can easily extract the arguments
+        dicts = [re.match(pattern, func[0]).groupdict() for func in all_funcs]
+        # filter the list of functions for the function the user has defined
+        fn_dict = [d for d in dicts if d.get('function') == func_name][0]
+        # make the string that will be eval'd
+        assignment = var_name if var_name == '' else var_name + ' = '
+        return '{0}{1}({2})'.format(assignment, func_name, fn_dict.get('args'))
+
+    def handle_python(self, _task: OrcaTask):
         log.debug("  exec python file : " + _task.python)
 
         resolved_file = self._resolve_file_path(_task.python, ".py")
-
+        config = _task.config
         try:
             if resolved_file is None:
                 exec(_task.python, _task.locals)
             else:
                 with open(resolved_file, 'r') as script:
-                    exec(script.read(), _task.locals)
+                    _python = script.read()
+                    exec(_python, _task.locals)
+                    if 'callable' in config:
+                        call_str = self.__get_call_string(config, _python)
+                        exec(call_str, _task.locals)
+
             _task.status = "success"
+        except IndexError:
+            raise ExecutionError(
+                'The function {0} was not defined in the file: {1}'.format(_task.config.get('callable'), _task.python)
+            )
         except BaseException as e:
             _task.status = "failed"
             log.debug(str(e))
             raise
-
         # remove after execution
-        del _task.locals['__builtins__']
+        keys_to_remove = [k for k in _task.locals if
+                          k not in _task.outputs and k not in _task.inputs]
 
-        return handle_python_result(_task.outputs, _task.name, _task.locals)
+        for key in keys_to_remove:
+            del _task.locals[key]
 
 
 #############################################

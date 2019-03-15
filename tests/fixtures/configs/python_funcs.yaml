@@ -1,0 +1,50 @@
+apiVersion: '1.0'
+name: 'test python functions'
+version: '0.0'
+job:
+
+  - task: calling_first_model
+    python: ./test_func.py
+    config:
+      callable: do_something
+      returns: value
+    inputs:
+      arg1: 5
+      arg2: 3
+      arg3: 5
+    outputs:
+      - value
+
+  - task: call_second_model
+    python: ./test_func.py
+    config:
+      callable: do_something_dict
+      returns: a_dict
+    inputs:
+      arg1: task.calling_first_model.value
+      arg2: 10
+    outputs:
+      - a_dict
+
+  - task: call_last_model
+    python: ./test_func.py
+    config:
+      callable: do_something_no_return
+    inputs:
+      dict: task.call_second_model.a_dict
+
+  - task: call_extra_model
+    python: ./test_func.py
+    config:
+      callable: do_something2
+      returns: value
+    inputs:
+      arg1: task.call_second_model.a_dict.sum
+      arg2: task.call_second_model.a_dict.product
+    outputs:
+      - value
+
+  - task: print_final
+    python: print(value)
+    inputs:
+      value: task.call_extra_model.value

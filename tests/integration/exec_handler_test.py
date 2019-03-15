@@ -1,5 +1,6 @@
 import unittest
 from orca.core.handler import ExecutionHandler
+from orca.core.errors import ExecutionError
 from tests.util import run_handler
 
 
@@ -34,6 +35,13 @@ class OrcaExecutionTest(unittest.TestCase):
 
     def test_var4_task(self):
         run_handler('var4.yaml', ExecutionHandler())
+
+    def test_python_func(self):
+        run_handler('python_funcs.yaml', ExecutionHandler())
+
+    def test_bad_python_func(self):
+        with self.assertRaises(ExecutionError):
+            run_handler('bad_python_func.yaml', ExecutionHandler())
 
 
 if __name__ == '__main__':

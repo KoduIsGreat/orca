@@ -56,7 +56,7 @@ job:
         - - task: get_ids
             python: |
               get_ids = lambda c: c['id']
-              feature_ids = list( map (get_ids, features)
+              feature_ids = list( map (get_ids, features) )
             inputs:
               features: task.catchments.features
             outputs:
