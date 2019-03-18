@@ -49,6 +49,8 @@ steps:
       twine upload -r pypi -p $(pypiPW) dist/*
       bump2version --no-tag patch
       git push origin master --tags
+      cd docs
+      mkdocs gh-deploy
     displayName: create release version build & upload package
     condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
   - script: |
