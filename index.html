@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="None">
+  
+  <link rel="shortcut icon" href="img/favicon.ico">
+  <title>Home - Orca 0.4.0</title>
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
+
+  <link rel="stylesheet" href="css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="css/theme_extra.css" type="text/css" />
+  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css">
+  
+  <script>
+    // Current page data
+    var mkdocs_page_name = "Home";
+    var mkdocs_page_input_path = "index.md";
+    var mkdocs_page_url = null;
+  </script>
+  
+  <script src="js/jquery-2.1.1.min.js" defer></script>
+  <script src="js/modernizr-2.8.3.min.js" defer></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script> 
+  
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+      <div class="wy-side-nav-search">
+        <a href="." class="icon icon-home"> Orca 0.4.0</a>
+        <div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="./search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+	<ul class="current">
+	  
+          
+            <li class="toctree-l1 current">
+		
+    <a class="current" href=".">Home</a>
+    <ul class="subnav">
+            
+    <li class="toctree-l2"><a href="#orca-050">Orca 0.5.0</a></li>
+    
+        <ul>
+        
+            <li><a class="toctree-l3" href="#installation">Installation</a></li>
+        
+            <li><a class="toctree-l3" href="#quickstart">Quickstart</a></li>
+        
+        </ul>
+    
+
+    <li class="toctree-l2"><a href="#concepts">Concepts</a></li>
+    
+        <ul>
+        
+            <li><a class="toctree-l3" href="#what-is-a-orca-workflow">What is a Orca Workflow ?</a></li>
+        
+            <li><a class="toctree-l3" href="#if-structures">If Structures</a></li>
+        
+            <li><a class="toctree-l3" href="#for-structures">For structures</a></li>
+        
+            <li><a class="toctree-l3" href="#switch-structures">Switch structures</a></li>
+        
+            <li><a class="toctree-l3" href="#fork-structures">Fork structures</a></li>
+        
+        </ul>
+    
+
+    <li class="toctree-l2"><a href="#commands">Commands</a></li>
+    
+        <ul>
+        
+            <li><a class="toctree-l3" href="#run">run</a></li>
+        
+            <li><a class="toctree-l3" href="#todot">todot</a></li>
+        
+            <li><a class="toctree-l3" href="#version">version</a></li>
+        
+        </ul>
+    
+
+    </ul>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <a class="" href="tasks/">Tasks</a>
+	    </li>
+          
+        </ul>
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href=".">Orca 0.4.0</a>
+      </nav>
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".">Docs</a> &raquo;</li>
+    
+      
+    
+    <li>Home</li>
+    <li class="wy-breadcrumbs-aside">
+      
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main">
+            <div class="section">
+              
+                <h1 id="orca-050">Orca 0.5.0</h1>
+<p>Orca is a workflow management solution similar in nature to <a href="">Airflow</a> and <a href="">Luigi</a>,
+but specifically for microservices and is built with data streaming in mind. It attempts to provide
+a sensible way to define a data driven model workflow through a combination of yaml and python.  </p>
+<h2 id="installation">Installation</h2>
+<p>The easiest way to install orca is from pip</p>
+<pre><code class="bash">pip install orca
+</code></pre>
+
+<p>To verify that the install succeeded run the version command</p>
+<pre><code class="bash">orca version
+</code></pre>
+
+<h2 id="quickstart">Quickstart</h2>
+<p>Create a file called orca.yml</p>
+<pre><code class="yaml">apiversion: orca/'1.0'
+version: 0.1
+name: 'quickstart example'
+job:
+    - task: hello_world
+      print: print('Hello World!')
+
+
+</code></pre>
+
+<p>To invoke the CLI after installing one just invokes orca:</p>
+<pre><code>$ orca
+Usage: orca [OPTIONS] COMMAND [ARGS]...
+
+Options:
+  -v, --verbosity LVL  Either CRITICAL, ERROR, WARNING, INFO or DEBUG
+  --help               Show this message and exit.
+
+Commands:
+  run       Run an orca workflow.
+  todot     Create a graphviz dot file from an orca workflow.
+  validate  Validate an orca workflow.
+  version   Print the orca version.
+
+</code></pre>
+
+<p>Execute the hello world example</p>
+<pre><code class="bash">$ orca run orca.yml
+Hello World!
+</code></pre>
+
+<h1 id="concepts">Concepts</h1>
+<p>This section describes some core concepts to understand how to use orca</p>
+<h2 id="what-is-a-orca-workflow">What is a Orca Workflow ?</h2>
+<p>An orca workflow, is a yaml document describing the actions that make up the workflow.
+Here is a simple "hello world" example</p>
+<pre><code class="yaml">apiversion: orca/'1.0'
+name: 'hello-workflow'
+version: 0.1
+job:
+  - task: hello
+    python: print('Hello World!')
+
+</code></pre>
+
+<p>The document above describes a <code>Job</code> object that is an array describing the <code>tasks</code> to perform as steps in the workflow.
+A task is some action that can be taken during the execution of the workflow, in this instance we are using
+whats called a <code>python task</code>. There are a number of available tasks available for use in your workflows, They are:
+<em> python
+</em> bash
+<em> http
+</em> csip</p>
+<p>You can read more about tasks at their <a href="tasks/">dedicated page</a>.
+Orca also has the ability to define <code>variables</code> for reuse throughout the workflow. These variables can be reused amongst
+tasks and passed in as inputs. variables, are namespaced under the var yaml object, and any reference to a variable must
+being with <code>var.</code>
+<strong>A side note about strings: as you may notice in the example below, for most of our yaml document we have not been
+quoting our strings the one exception to  this rule is in the var section of the document. i.e if the variable is a string
+you must quote it!</strong></p>
+<pre><code class="yaml">apiversion: orca/'1.0'
+version: 0.1
+var:
+  name: 'Susie'
+job:
+  - task: hello
+    python: |
+      msg = 'Hello {0}'.format(person_to_greet)
+      print(msg)
+    inputs:
+      person_to_greet: var.name
+</code></pre>
+
+<p>Another component of an orca workflow are <code>control structures</code>. Control structures allow for
+control flow type operations to be performed on a subset of tasks by writing yaml describing the nature of the control
+flow.
+There are four kinds of control structures in orca.</p>
+<ul>
+<li>if control</li>
+<li>for control</li>
+<li>switch control</li>
+<li>fork control</li>
+</ul>
+<hr />
+<h2 id="if-structures">If Structures</h2>
+<pre><code class="yaml">#Example of a if condition object
+if: 5 &gt; 0
+do:
+  - task: cond_task_1
+    python: print('hello condition!')
+</code></pre>
+
+<p><code>if</code> structures contain two required top level properties <code>if</code> which describes the condition and <code>do</code> 
+the list of <code>tasks</code> to execute.</p>
+<hr />
+<h2 id="for-structures">For structures</h2>
+<pre><code class="yaml">for: i, range(0,10)
+do:
+  - task: print_i
+    python: print(counter)
+    inputs:
+      counter: i
+
+</code></pre>
+
+<p><code>for</code> control structures also contain two required properties they are : <code>for</code> and <code>do</code>.
+The value of the <code>for</code> property must be defined as <code>var,expression</code></p>
+<hr />
+<h2 id="switch-structures">Switch structures</h2>
+<pre><code class="yaml">switch: 1
+1:
+  - task: start5_1
+    python: var.afile
+  - task: start5_2
+    python: var.afile
+2:
+  - task: start1_1
+    python: var.afile
+  - task: start1_2
+    python: var.afile
+default:
+  - task: default
+    python: var.afile
+</code></pre>
+
+<p><code>switch</code> statements require a <code>switch</code> and <code>default</code> properties. The <code>default</code> properties is the set of tasks to run given that
+the switch condition does not resolve to a case. The <code>switch</code> property value can be be a variable thats evaluated at the time the switch block
+is reached.</p>
+<h2 id="fork-structures">Fork structures</h2>
+<pre><code class="yaml">fork:     
+   # first group of tasks
+   -  - task: start1
+        python: var.afile
+      - task: start4
+        python: var.afile
+     # second group      
+   -  - task: start2
+        python: var.afile
+     # third group     
+   -  - task: start3
+        python: var.afile
+
+</code></pre>
+
+<p>A Fork structure is an array, of <code>task</code> lists. each list in the topmost array is executed in parallel.</p>
+<h1 id="commands">Commands</h1>
+<p>Orca currently provides a concise set of commands for running workflows.</p>
+<h2 id="run">run</h2>
+<p>The run command executes the workflow defined in the yaml configuration file.
+Options include ledgers, to publish the results of each task in the workflow too, options include a json, mongo or kafka ledger</p>
+<pre><code class="bash">Usage: orca run [OPTIONS] FILE [ARGS]...
+
+  Run an orca workflow.
+
+Options:
+  --ledger-json PATH   file ledger.
+  --ledger-mongo TEXT  mongodb ledger, TEXT format &quot;&lt;host[:port]&gt;/&lt;db&gt;/&lt;col&gt;&quot;.
+  --ledger-kafka TEXT  kafka ledger, TEXT format &quot;&lt;host[:port]&gt;/topic&quot;.
+  --help               Show this message and exit.
+</code></pre>
+
+<h2 id="todot">todot</h2>
+<p>Converts the yaml definition into a graphviz dotfile</p>
+<h2 id="version">version</h2>
+<p>Prints the current orca version</p>
+<pre><code class="bash">$ orca version
+0.4.0
+</code></pre>
+              
+            </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="tasks/" class="btn btn-neutral float-right" title="Tasks">Next <span class="icon icon-circle-arrow-right"></span></a>
+      
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+    
+  </div>
+
+  Built with <a href="http://www.mkdocs.org">MkDocs</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+      
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" style="cursor: pointer">
+    <span class="rst-current-version" data-toggle="rst-current-version">
+      
+      
+      
+        <span style="margin-left: 15px"><a href="tasks/" style="color: #fcfcfc">Next &raquo;</a></span>
+      
+    </span>
+</div>
+    <script>var base_url = '.';</script>
+    <script src="js/theme.js" defer></script>
+      <script src="search/main.js" defer></script>
+
+</body>
+</html>
+
+<!--
+MkDocs version : 1.0.4
+Build Date UTC : 2019-03-18 17:10:18
+-->

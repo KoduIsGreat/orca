@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  
+  <link rel="shortcut icon" href="../img/favicon.ico">
+  <title>Tasks - Orca 0.4.0</title>
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
+
+  <link rel="stylesheet" href="../css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../css/theme_extra.css" type="text/css" />
+  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css">
+  
+  <script>
+    // Current page data
+    var mkdocs_page_name = "Tasks";
+    var mkdocs_page_input_path = "tasks.md";
+    var mkdocs_page_url = null;
+  </script>
+  
+  <script src="../js/jquery-2.1.1.min.js" defer></script>
+  <script src="../js/modernizr-2.8.3.min.js" defer></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script> 
+  
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+      <div class="wy-side-nav-search">
+        <a href=".." class="icon icon-home"> Orca 0.4.0</a>
+        <div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+	<ul class="current">
+	  
+          
+            <li class="toctree-l1">
+		
+    <a class="" href="..">Home</a>
+	    </li>
+          
+            <li class="toctree-l1 current">
+		
+    <a class="current" href="./">Tasks</a>
+    <ul class="subnav">
+            
+    <li class="toctree-l2"><a href="#tasks">Tasks</a></li>
+    
+        <ul>
+        
+            <li><a class="toctree-l3" href="#task-types">Task Types</a></li>
+        
+            <li><a class="toctree-l3" href="#task-structure">Task Structure</a></li>
+        
+        </ul>
+    
+
+    <li class="toctree-l2"><a href="#referencing-task-data-later-in-the-workflow">Referencing Task data later in the workflow</a></li>
+    
+
+    <li class="toctree-l2"><a href="#python-task">Python Task</a></li>
+    
+        <ul>
+        
+            <li><a class="toctree-l3" href="#inline-python-example">Inline python example</a></li>
+        
+            <li><a class="toctree-l3" href="#external-python-script-example">External python script example</a></li>
+        
+            <li><a class="toctree-l3" href="#external-python-modules">External python modules</a></li>
+        
+        </ul>
+    
+
+    </ul>
+	    </li>
+          
+        </ul>
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="..">Orca 0.4.0</a>
+      </nav>
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="..">Docs</a> &raquo;</li>
+    
+      
+    
+    <li>Tasks</li>
+    <li class="wy-breadcrumbs-aside">
+      
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main">
+            <div class="section">
+              
+                <h1 id="tasks">Tasks</h1>
+<p>Tasks are an abstraction that represent some action to take at workflow execution time. Some examples are:</p>
+<ul>
+<li>call a service</li>
+<li>insert data into a database</li>
+<li>do some </li>
+</ul>
+<h2 id="task-types">Task Types</h2>
+<p>There are four types of tasks currently supported: </p>
+<ul>
+<li>python</li>
+<li>bash</li>
+<li>csip</li>
+<li>http</li>
+</ul>
+<h2 id="task-structure">Task Structure</h2>
+<p>A task has a common list of properties and structure amongst all the different types:</p>
+<table>
+    <tr>
+        <th> Property</th>
+        <th> Description</th>
+        <th> Type </th>
+        <th> Required </th>
+    </tr>
+    <tr> 
+        <td>task</td>
+        <td>The task name, must be unique and a valid identifier (i.e. no spaces) </td>
+        <td> string</td>
+        <td>Y </td>        
+    </tr>
+    <tr> 
+        <td>python</td>
+        <td> Either an inline python string, or a path to a python file</td>
+        <td> string</td>
+        <td> At least one kind is required </td>        
+    </tr>
+    <tr> 
+        <td>bash</td>
+        <td> Either an inline bash string, or a path to a shell</td>
+        <td> string</td>
+        <td> At least one kind is required </td>        
+    </tr>
+        <tr> 
+        <td>http</td>
+        <td> a http url to make a request against, can be to a rest api, or just a normal website</td>
+        <td> string</td>
+        <td> At least one kind is required </td>        
+    </tr>
+    <tr> 
+        <td>csip</td>
+        <td> A url to a csip service</td>
+        <td> string</td>
+        <td> At least one kind is required </td>        
+    </tr>
+    <tr> 
+        <td>inputs</td>
+        <td> a object describing inputs to call the task with, the values can reference from other tasks or workflow variables</td>
+        <td> object</td>
+        <td>N </td>        
+    </tr>
+    <tr> 
+        <td>outputs</td>
+        <td> a list of outputs to capture from the tasks execution </td>
+        <td> string array</td>
+        <td>N </td>        
+    </tr>
+</table>
+
+<h1 id="referencing-task-data-later-in-the-workflow">Referencing Task data later in the workflow</h1>
+<p>Each orca task once completed persists its state for reuse later.</p>
+<pre><code class="yaml">apiVersion: '1.0'
+version: 0.1
+name: referencing task outputs
+job:
+    - task: get_today
+      python: |
+        import datetime
+        today = datetime.datetime.utcnow()
+      outputs:
+        - today
+    - task: print_today
+      python: print(today)
+      inputs: 
+        today: task.get_today.today
+
+</code></pre>
+
+<p>In this example we are referencing the output specified by the <code>get_today</code> task by the string <code>task.get_today.today</code>
+Task state is namespaced under the <code>task.</code> directive and each tasks data is namespaced further under the task name.</p>
+<h1 id="python-task">Python Task</h1>
+<p>A python task is flexible and can be used in a number of different ways to suit different needs, these are:
+<em> inline python
+</em> external script
+* external module with function calls</p>
+<h3 id="inline-python-example">Inline python example</h3>
+<p>This is the example we are familiar with at this point:</p>
+<pre><code class="yaml">task: get_today
+python: |
+    import datetime
+    today = datetime.datetime.utcnow()
+outputs:
+    - today
+
+</code></pre>
+
+<p>Here we are just writing our python inline to the task, this can be useful for very simple things but for more complex 
+tasks, its recommended to either use a external script or a module to complete your python needs. Here we can retrieve
+the <code>today</code> variable for use later in our workflow, just like we would be able to if we were writing all of this in 
+a normal python script</p>
+<h3 id="external-python-script-example">External python script example</h3>
+<p>External scripts are useful for when you want to perform some action that does not have any inputs (right now external 
+scripts do not support injecting inputs, but we are actively working to change this)
+given the python file 
+<code>scrape.py</code></p>
+<pre><code class="python">import bs4
+import requests
+import datetime
+today = datetime.datetime.utcnow()
+forecast = 0
+file = 'nwm.t{0}z.short_range.channel_rt'
+url = 'https://nomads.ncep.noaa.gov/pub/data/nccf/com/nwm/prod/nwm.{0}/short_range/'
+formatted_url = url.format(today.strftime(&quot;%Y%m%d&quot;))
+html = requests.get(formatted_url, headers={'Content-Type': 'text/plain'}).content
+soup = bs4.BeautifulSoup(html, 'html.parser')
+a_tags = soup.find_all('a')
+fmt_file = file.format(str(forecast).zfill(2))
+find_file = lambda f: f.get_text().startswith(fmt_file)
+file_exists = len ( list ( filter ( find_file, a_tags ) ) ) &gt; 0
+print('file {0} is present ?  = {1}'.format(fmt_file, file_exists))
+</code></pre>
+
+<pre><code class="yaml">apiVersion: '1.0'
+version: '0.1'
+name: 'scrape nomads for netcdf file'
+job:
+  - task: scrape
+    python: ./scrape.py
+    outputs:
+      - file_exists
+  - if: task.scrape.file_exists
+    do:
+      - ...
+
+</code></pre>
+
+<h3 id="external-python-modules">External python modules</h3>
+<p>Another way to use the python task is to reference a python module and directly access functions in the module. 
+To do this you must utilize a special configuration for the python task using the config object.</p>
+<p>The python config object has the following properties available
+<table>
+    <tr>
+        <th> property </th>
+        <th> description </th>
+        <th> type </th>
+        <th> required </th>
+    </tr>
+    <tr>
+        <td> callable </td>
+        <td> The python function in the module to call</td>
+        <td> string </td>
+        <td> Y </td>
+    </tr>
+    <tr>
+        <td> returns </td>
+        <td> A name to assign the return value of the callable</td>
+        <td> string </td>
+        <td> Y </td>
+    </tr>
+</table></p>
+<p>Lets rewrite the example above to a module, and see how orca can utilize it
+<code>scrape.py</code></p>
+<pre><code class="python">
+import bs4
+import requests
+
+def get_html(url, today):
+    formatted_url = url.format(today.strftime(&quot;%Y%m%d&quot;))
+    return requests.get(formatted_url, headers={'Content-Type': 'text/plain'}).content
+
+def scrape_html(url, today, forecast, file):
+    html = get_html(url, today)
+    soup = bs4.BeautifulSoup(html, 'html.parser')
+    a_tags = soup.find_all('a')
+    fmt_file = file.format(str(forecast).zfill(2))
+    find_file = lambda f: f.get_text().startswith(fmt_file)
+    file_exists = len ( list ( filter ( find_file, a_tags ) ) ) &gt; 0
+    print('file {0} is present ?  = {1}'.format(fmt_file, file_exists))
+    return file_exists
+
+</code></pre>
+
+<pre><code class="yaml">apiVersion: '1.0'
+version: '0.1'
+name: 'check if netcdf file exists for current hour'
+var:
+  forecast: 0
+  nomadsUrl: 'https://nomads.ncep.noaa.gov/pub/data/nccf/com/nwm/prod/nwm.{0}/short_range/'
+  fileName: 'nwm.t{0}z.short_range.channel_rt'
+job:
+    - task: get_today
+      python: |
+        import datetime
+        today = datetime.datetime.utcnow()
+    - task: scrape
+      python: ./scrape.py
+      config:
+        callable: scrape_html
+        returns: current_file_exists 
+      inputs:
+        url: var.nomadsUrl
+        today: task.get_today.today
+        forecast: var.forecast
+        file: var.fileName
+      outputs:
+        - current_file_exists
+    - if: current_file_exists
+      do:
+        - .....
+
+</code></pre>
+
+<p>In this example we introduced a config object that specifies which function to call, and maps the inputs defined on the task
+to the inputs defined in the callable function. Additionally we specified a name for the return value, this name can be 
+any valid identifier. If the function returns nothing then returns is not required</p>
+              
+            </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href=".." class="btn btn-neutral" title="Home"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+    
+  </div>
+
+  Built with <a href="http://www.mkdocs.org">MkDocs</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+      
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" style="cursor: pointer">
+    <span class="rst-current-version" data-toggle="rst-current-version">
+      
+      
+        <span><a href=".." style="color: #fcfcfc;">&laquo; Previous</a></span>
+      
+      
+    </span>
+</div>
+    <script>var base_url = '..';</script>
+    <script src="../js/theme.js" defer></script>
+      <script src="../search/main.js" defer></script>
+
+</body>
+</html>
