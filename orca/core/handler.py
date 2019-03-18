@@ -334,7 +334,7 @@ class ExecutionHandler(OrcaHandler):
         fn_dict = [d for d in dicts if d.get('function') == func_name][0]
         # make the string that will be eval'd
         assignment = var_name if var_name == '' else var_name + ' = '
-        return '{0}{1}({2})'.format(assignment, func_name, fn_dict.get('args'))
+        return '{0}{1}({2})'.format(assignment, func_name, fn_dict.get('args', ''))
 
     def handle_python(self, _task: OrcaTask):
         log.debug("  exec python file : " + _task.python)
