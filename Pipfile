@@ -20,6 +20,7 @@ wheel = "*"
 flake8 = "*"
 pytest = "*"
 mkdocs = "*"
+"bump2version" = "*"
 
 [requires]
 python_version = "3.6"
