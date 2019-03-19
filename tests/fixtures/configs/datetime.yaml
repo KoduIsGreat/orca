@@ -41,6 +41,8 @@ job:
       file: var.fileName
       forecast: var.forecast
       html: task.get_nomads.html
+    outputs:
+      - file_exists
 
   - if: task.scrape_html.file_exists
     do:
@@ -51,12 +53,13 @@ job:
           header:
             content-type: 'application/json'
         outputs:
-          - all
+          - type
+          - features
       - fork:
         - - task: get_ids
             python: |
               get_ids = lambda c: c['id']
-              feature_ids = list( map (get_ids, features)
+              feature_ids = list( map (get_ids, features) )
             inputs:
               features: task.catchments.features
             outputs:

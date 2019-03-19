@@ -19,7 +19,7 @@ steps:
     inputs:
       versionSpec: '$(python.version)'
       architecture: 'x64'
-  - script: python -m pip install setuptools wheel flake8 requests bs4 pytest pytest-cov
+  - script: python -m pip install setuptools wheel flake8 requests bs4 pytest pytest-cov mkdocs bump2version
     displayName: 'install setup tools'
 
   - script: python setup.py install
@@ -27,9 +27,6 @@ steps:
 
   - script: flake8 .
     displayName: 'Run linter'
-
-  - script: python setup.py sdist
-    displayName: 'build package'
 
   - script:  pytest tests --junitxml=junit/test-results.xml --cov=orca --cov-report=xml --cov-report=html
 
@@ -46,6 +43,18 @@ steps:
       codeCoverageTool: Cobertura
       summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/coverage.xml'
       reportDirectory: '$(System.DefaultWorkingDirectory)/**/htmlcov'
-## - script: |
-#     twine upload -r pypi -p $(password) dist/orca-version.tar.gz
-#   displayName: publish package
+  - script: |
+      bump2version release
+      python setup.py sdist
+      twine upload -r pypi -u $(pypiUser) -p $(pypiPW) dist/*
+      bump2version --no-tag patch
+      git push origin master --tags
+      cd docs
+      mkdocs gh-deploy
+    displayName: create release version build & upload package
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
+  - script: |
+      bump2version minor
+      git push origin develop --tags
+    displayName: create minor version bump
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/develop'))

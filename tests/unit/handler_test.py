@@ -12,33 +12,33 @@ class OrcaHandlerTest(unittest.TestCase):
         # _task = OrcaTask(mock, mock)
         h = ExecutionHandler()
         _task = OrcaTask(mock, h.resolve_task_inputs(mock))
-        output = h.handle_python(_task)
-        assert _task.name + '.greeting' in output
-        assert output[_task.name + '.greeting'] == 'Hello Adam'
+        h.handle_python(_task)
+        assert 'greeting' in _task.locals
+        assert _task.locals['greeting'] == 'Hello Adam'
 
     def test_inline_python(self):
         mock = tasks.inline_python_mock
         h = ExecutionHandler()
         _task = OrcaTask(mock, h.resolve_task_inputs(mock))
-        output = h.handle_python(_task)
-        assert _task.name + '.greeting' in output
-        assert output[_task.name + '.greeting'] == 'Hello World'
+        h.handle_python(_task)
+        assert 'greeting' in _task.locals
+        assert _task.locals['greeting'] == 'Hello World'
 
     def test_file_no_inputs_python(self):
         mock = tasks.file_python_mock
         h = ExecutionHandler()
         _task = OrcaTask(mock, h.resolve_task_inputs(mock))
-        output = h.handle_python(_task)
-        assert _task.name + '.result' in output
-        assert output[_task.name + '.result'] == 10
+        h.handle_python(_task)
+        assert 'result' in _task.locals
+        assert _task.locals['result'] == 10
 
     def test_file_inputs_python(self):
         mock = tasks.file_python_inputs_mock
         h = ExecutionHandler()
         _task = OrcaTask(mock, h.resolve_task_inputs(mock))
-        output = h.handle_python(_task)
-        assert _task.name + '.result' in output
-        assert output[_task.name + '.result'] == 25
+        h.handle_python(_task)
+        assert 'result' in _task.locals
+        assert _task.locals['result'] == 25
 
     def test_bad_file_python(self):
         mock = tasks.bad_file_path_python

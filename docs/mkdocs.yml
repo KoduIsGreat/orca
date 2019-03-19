@@ -1,9 +1,9 @@
-site_name: Orca 0.4.0
+site_name: Orca 0.5.2-dev0
 nav:
   - Home: index.md
 #  - Concepts: concepts.md
 #  - Commands: commands.md
-#  - Tasks: tasks.md
+  - Tasks: tasks.md
 #  - Examples: examples.md
 #  - Workflow Reference: workflow.md
 #  - API Reference: api.md
