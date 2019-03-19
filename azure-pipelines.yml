@@ -46,7 +46,7 @@ steps:
   - script: |
       bump2version release
       python setup.py sdist
-      twine upload -r pypi -p $(pypiPW) dist/*
+      twine upload -r pypi -u $(pypiUser) -p $(pypiPW) dist/*
       bump2version --no-tag patch
       git push origin master --tags
       cd docs

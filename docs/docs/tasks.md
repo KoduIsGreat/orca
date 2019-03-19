@@ -3,7 +3,8 @@ Tasks are an abstraction that represent some action to take at workflow executio
 
 * call a service
 * insert data into a database
-* do some 
+* do some transformation on a dataset
+* scrape a webpage
 
 
 ## Task Types
@@ -64,6 +65,12 @@ A task has a common list of properties and structure amongst all the different t
         <td>outputs</td>
         <td> a list of outputs to capture from the tasks execution </td>
         <td> string array</td>
+        <td>N </td>        
+    </tr>
+    <tr> 
+        <td>config</td>
+        <td> an optional configuration object, its available properties depend on the kind of task </td>
+        <td> object </td>
         <td>N </td>        
     </tr>
 </table>
