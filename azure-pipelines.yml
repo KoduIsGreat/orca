@@ -45,7 +45,7 @@ steps:
       summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/coverage.xml'
       reportDirectory: '$(System.DefaultWorkingDirectory)/**/htmlcov'
   - script: |
-      git config user.name $(gitUser)
+      git config user.name "$(gitUser)"
       bump2version release
       python setup.py sdist
       twine upload -r pypi -u $(pypiUser) -p $(pypiPW) dist/*
