@@ -5,6 +5,7 @@
 
 trigger:
 - master
+- develop
 
 pool:
   vmImage: 'Ubuntu-16.04'
@@ -44,17 +45,16 @@ steps:
       summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/coverage.xml'
       reportDirectory: '$(System.DefaultWorkingDirectory)/**/htmlcov'
   - script: |
+      git config user.name "$(gitUser)"
       bump2version release
       python setup.py sdist
       twine upload -r pypi -u $(pypiUser) -p $(pypiPW) dist/*
       bump2version --no-tag patch
-      git push origin master --tags
-      cd docs
-      mkdocs gh-deploy
+      git push https://$(githubPAT)@github.com/KoduIsGreat/orca.git --tags
     displayName: create release version build & upload package
     condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
   - script: |
-      bump2version minor
-      git push origin develop --tags
+      bump2version patch
+      git push https://$(githubPAT)@github.com/KoduIsGreat/orca.git --tags
     displayName: create minor version bump
     condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/develop'))
