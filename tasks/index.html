@@ -8,7 +8,7 @@
   
   
   <link rel="shortcut icon" href="../img/favicon.ico">
-  <title>Tasks - Orca 0.4.0</title>
+  <title>Tasks - Orca 0.5.2-dev0</title>
   <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
 
   <link rel="stylesheet" href="../css/theme.css" type="text/css" />
@@ -36,7 +36,7 @@
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
       <div class="wy-side-nav-search">
-        <a href=".." class="icon icon-home"> Orca 0.4.0</a>
+        <a href=".." class="icon icon-home"> Orca 0.5.2-dev0</a>
         <div role="search">
   <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" title="Type search term here" />
@@ -98,7 +98,7 @@
       
       <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
         <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-        <a href="..">Orca 0.4.0</a>
+        <a href="..">Orca 0.5.2-dev0</a>
       </nav>
 
       
@@ -125,7 +125,8 @@
 <ul>
 <li>call a service</li>
 <li>insert data into a database</li>
-<li>do some </li>
+<li>do some transformation on a dataset</li>
+<li>scrape a webpage</li>
 </ul>
 <h2 id="task-types">Task Types</h2>
 <p>There are four types of tasks currently supported: </p>
@@ -184,6 +185,12 @@
         <td>outputs</td>
         <td> a list of outputs to capture from the tasks execution </td>
         <td> string array</td>
+        <td>N </td>        
+    </tr>
+    <tr> 
+        <td>config</td>
+        <td> an optional configuration object, its available properties depend on the kind of task </td>
+        <td> object </td>
         <td>N </td>        
     </tr>
 </table>
