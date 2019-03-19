@@ -2,7 +2,7 @@ import setuptools
 import orca
 
 setuptools.setup(
-    name="orca",
+    name=orca.name,
     version=orca.__version__,
     author="Adam Shelton, Olaf David",
     author_email="adamshelton@rti.org",

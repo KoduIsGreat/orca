@@ -7,7 +7,7 @@ a sensible way to define a data driven model workflow through a combination of y
 ## Installation
 The easiest way to install orca is from pip
 ```bash
-pip install orca
+pip install amanzi.orca
 ```
 To verify that the install succeeded run the version command
 ```bash
@@ -188,5 +188,5 @@ Converts the yaml definition into a graphviz dotfile
 Prints the current orca version
 ```bash
 $ orca version
-0.4.0
+0.5.2
 ```
