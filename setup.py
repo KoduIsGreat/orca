@@ -5,7 +5,7 @@ setuptools.setup(
     name="orca",
     version=orca.__version__,
     author="Adam Shelton, Olaf David",
-    author_email="",
+    author_email="adamshelton@rti.org",
     install_requires=[
         "csip ==  0.8.13",
         "jsonschema == 3.0.1",
@@ -32,7 +32,8 @@ setuptools.setup(
         ]
     },
     classifiers=[
-        "License :: GNU License",
-        "Command Line Interface"
+        "Development Status :: 3 - Alpha",
+        "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+        "Intended Audience :: Developers"
     ]
 )
