@@ -56,6 +56,6 @@ steps:
   - script: |
       git config user.name "$(gitUser)"
       bump2version patch
-      git push https://$(githubPAT)@github.com/KoduIsGreat/orca.git develop --tags
+      git push https://$(githubPAT)@github.com/KoduIsGreat/orca.git
     displayName: bump patch version
     condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/develop'))
