@@ -139,32 +139,38 @@ class OrcaHandler(metaclass=ABCMeta):
 
     def _resolve_file_path(self, name: str, ext: str) -> str:
         """ resolve the full qualified path name"""
-
-        # potential value resolution if this should be a file name
-        try:
-            name = eval(str(name), globals())
-        except Exception as e:
-            # ok, never mind
-            log.debug(e)
-
-        if os.path.isfile(name):
-            return name
-        else:
-            # maybe change this, because of testing
-            if hasattr(self, 'config'):
-                yaml_dir = self.config.get_yaml_dir()
+        def resolve_file_path(handler: OrcaHandler, _name: str) -> str:
+            """ resolve the full qualified path name"""
+            if os.path.isfile(_name):
+                return _name
+            # otherwise find the relative dir
+            elif hasattr(handler, 'config'):
+                yaml_dir = handler.config.get_yaml_dir()
             else:
                 yaml_dir = "."
-            rel_path = os.path.join(yaml_dir, name)
+
+            rel_path = os.path.join(yaml_dir, _name)
             if os.path.isfile(rel_path):
                 # path relative to yaml file
                 return rel_path
             else:
-                if name.endswith(ext):
-                    # this should be a file but it's not.
-                    raise ConfigurationError(
-                        'File not found: "{0}"'.format(name))
-                return None
+                # this should be a file but it's not.
+                raise ConfigurationError(
+                    'File not found: "{0}"'.format(_name))
+        # check to see if the value ends with an extension
+        if name.endswith(ext):
+            # check if its an absolute path
+            return resolve_file_path(self, name)
+        # check if its a variable
+        elif name.startswith('var.'):
+            try:
+                name = eval(str(name), globals())
+            except Exception as e:
+                # ok, never mind
+                log.debug(e)
+            if not name:
+                return name
+            return resolve_file_path(self, name)
 
     def _handle_task(self, task_dict: Dict) -> OrcaTask:
         name = task_dict.get('task', None)

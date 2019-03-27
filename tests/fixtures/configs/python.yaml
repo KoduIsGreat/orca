@@ -1,0 +1,7 @@
+apiVersion: '1.0'
+name: simple hello world
+version: '0.1'
+
+job:
+  - task: test
+    python: print('Hello World!')
