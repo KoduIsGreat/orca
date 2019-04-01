@@ -183,21 +183,21 @@ class OrcaHandler(metaclass=ABCMeta):
         task_locals = self.resolve_task_inputs(task_dict)
         _task = OrcaTask(task_dict, task_locals)
 
-        log.debug("task '{0}' locals pre: {1}".format(_task.name, task_locals))
+        log.debug("task '{0}' locals pre: {1}".format(_task.name, _task.locals))
 
         # select the handler and call handle
         handle = self.__select_handler(task_dict)
         log.info('Starting task {0}'.format(name))
-        result = handle(_task)
+        handle(_task)
         log.info('Task {0} completed'.format(name, ))
 
         log.debug("task '{0}' locals post: {1}".format(
-            _task.name, task_locals))
+            _task.name, _task.locals))
 
         # put the task_locals into the global task dictonary
         # this includes input and outputs
         task[_task.name] = {}
-        for k, v in task_locals.items():
+        for k, v in _task.locals.items():
             task[_task.name][k] = v
 
         return _task
@@ -331,7 +331,7 @@ class ExecutionHandler(OrcaHandler):
         func_name = config.get('callable')
         var_name = config.get('returns', '')
         # match against a function definition string : def <funcname> ( args,...)
-        pattern = r'((?P<keyword>def)\s?(?P<function>\w+)\s?\((?P<args>(?P<arg>\w+(,\s?)?)+)\))'
+        pattern = r'((?P<keyword>def)\s?(?P<function>\w+)\s?\((?P<args>(?P<arg>\w+(,\s?)?)+)?\))'
         # find all functions in the file
         all_funcs = re.findall(pattern, script)
         # take each function string and break it up into a dictionary so we can easily extract the arguments
@@ -340,7 +340,8 @@ class ExecutionHandler(OrcaHandler):
         fn_dict = [d for d in dicts if d.get('function') == func_name][0]
         # make the string that will be eval'd
         assignment = var_name if var_name == '' else var_name + ' = '
-        return '{0}{1}({2})'.format(assignment, func_name, fn_dict.get('args', ''))
+        args = '' if fn_dict.get('args', '') is None else fn_dict.get('args')
+        return '{0}{1}({2})'.format(assignment, func_name, args)
 
     def handle_python(self, _task: OrcaTask):
         log.debug("  exec python file : " + _task.python)

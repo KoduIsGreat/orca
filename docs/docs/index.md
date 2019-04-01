@@ -81,6 +81,7 @@ quoting our strings the one exception to  this rule is in the var section of the
 you must quote it!**
 ```yaml
 apiVersion: '1.0'
+name: 'variable example'
 version: '0.1'
 var:
   name: 'Susie'
