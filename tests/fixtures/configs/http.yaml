@@ -1,0 +1,10 @@
+apiVersion: '1.0'
+name: 'http test'
+version: '0.1'
+job:
+  - task: get_http_test
+    http: www.google.com
+    config:
+      header:
+        content-type: text/plain
+      method: GET

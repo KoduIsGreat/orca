@@ -1,0 +1,15 @@
+apiVersion: '1.0'
+name: 'for example'
+version: '0.1'
+
+job:
+  - for: i, range(0,10)
+    do:
+      - task: count
+        python: print(counter)
+        inputs:
+          counter: i
+  - task: always_run
+    python: print('This is always run!, Ran  {0} Times'.format(timesRan))
+    inputs:
+      timesRan: i

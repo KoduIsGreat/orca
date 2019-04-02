@@ -118,7 +118,7 @@ class OrcaHandler(metaclass=ABCMeta):
     def handle_python(self, task: OrcaTask) -> Dict:
         pass
 
-    def __select_handler(self, task_dict: Dict):
+    def select_handler(self, task_dict: Dict):
         if 'csip' in task_dict:
             return self.handle_csip
         elif 'http' in task_dict:
@@ -186,7 +186,7 @@ class OrcaHandler(metaclass=ABCMeta):
         log.debug("task '{0}' locals pre: {1}".format(_task.name, _task.locals))
 
         # select the handler and call handle
-        handle = self.__select_handler(task_dict)
+        handle = self.select_handler(task_dict)
         log.info('Starting task {0}'.format(name))
         handle(_task)
         log.info('Task {0} completed'.format(name, ))
@@ -442,7 +442,7 @@ class DotfileHandler(OrcaHandler):
     """Handles printing of a dot file"""
 
     def __init__(self):
-        super().__init__()
+        super(OrcaHandler).__init__()
 
     def handle(self, config: OrcaConfig) -> None:
         self.config = config
@@ -587,3 +587,22 @@ class DotfileHandler(OrcaHandler):
 
     def handle_python(self, task: OrcaTask):
         self._ht(task.name, 'note', task.python)
+
+    def _handle_task(self, task_dict: Dict):
+
+        def select_handler(self, task_dict: Dict):
+            if 'csip' in task_dict:
+                return self.handle_csip
+            elif 'http' in task_dict:
+                return self.handle_http
+            elif 'bash' in task_dict:
+                return self.handle_bash
+            elif 'python' in task_dict:
+                return self.handle_python
+            else:
+                raise ConfigurationError(
+                    'Invalid task type: "{0}"'.format(task_dict))
+
+        handle = select_handler(self, task_dict)
+        _task = OrcaTask(task_dict, {})
+        handle(_task)
