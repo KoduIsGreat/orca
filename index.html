@@ -8,7 +8,7 @@
   <meta name="description" content="None">
   
   <link rel="shortcut icon" href="img/favicon.ico">
-  <title>Home - Orca 0.5.2-dev0</title>
+  <title>Home - Orca 0.5.3-dev0</title>
   <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
 
   <link rel="stylesheet" href="css/theme.css" type="text/css" />
@@ -36,7 +36,7 @@
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
       <div class="wy-side-nav-search">
-        <a href="." class="icon icon-home"> Orca 0.5.2-dev0</a>
+        <a href="." class="icon icon-home"> Orca 0.5.3-dev0</a>
         <div role="search">
   <form id ="rtd-search-form" class="wy-form" action="./search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" title="Type search term here" />
@@ -53,7 +53,7 @@
     <a class="current" href=".">Home</a>
     <ul class="subnav">
             
-    <li class="toctree-l2"><a href="#orca-050">Orca 0.5.0</a></li>
+    <li class="toctree-l2"><a href="#orca-053-dev0">Orca 0.5.3-dev0</a></li>
     
         <ul>
         
@@ -79,6 +79,9 @@
             <li><a class="toctree-l3" href="#fork-structures">Fork structures</a></li>
         
         </ul>
+    
+
+    <li class="toctree-l2"><a href="#examples">Examples</a></li>
     
 
     <li class="toctree-l2"><a href="#commands">Commands</a></li>
@@ -112,7 +115,7 @@
       
       <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
         <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-        <a href=".">Orca 0.5.2-dev0</a>
+        <a href=".">Orca 0.5.3-dev0</a>
       </nav>
 
       
@@ -134,7 +137,7 @@
           <div role="main">
             <div class="section">
               
-                <h1 id="orca-050">Orca 0.5.0</h1>
+                <h1 id="orca-053-dev0">Orca 0.5.3-dev0</h1>
 <p>Orca is a workflow management solution similar in nature to <a href="">Airflow</a> and <a href="">Luigi</a>,
 but specifically for microservices and is built with data streaming in mind. It attempts to provide
 a sensible way to define a data driven model workflow through a combination of yaml and python.  </p>
@@ -149,12 +152,12 @@ a sensible way to define a data driven model workflow through a combination of y
 
 <h2 id="quickstart">Quickstart</h2>
 <p>Create a file called orca.yml</p>
-<pre><code class="yaml">apiversion: orca/'1.0'
-version: 0.1
+<pre><code class="yaml">apiVersion: '1.0'
+version: '0.1'
 name: 'quickstart example'
 job:
     - task: hello_world
-      print: print('Hello World!')
+      python: print('Hello World!')
 
 
 </code></pre>
@@ -185,7 +188,7 @@ Hello World!
 <h2 id="what-is-a-orca-workflow">What is a Orca Workflow ?</h2>
 <p>An orca workflow, is a yaml document describing the actions that make up the workflow.
 Here is a simple "hello world" example</p>
-<pre><code class="yaml">apiversion: orca/'1.0'
+<pre><code class="yaml">apiVersion: '1.0'
 name: 'hello-workflow'
 version: 0.1
 job:
@@ -208,8 +211,9 @@ being with <code>var.</code>
 <strong>A side note about strings: as you may notice in the example below, for most of our yaml document we have not been
 quoting our strings the one exception to  this rule is in the var section of the document. i.e if the variable is a string
 you must quote it!</strong></p>
-<pre><code class="yaml">apiversion: orca/'1.0'
-version: 0.1
+<pre><code class="yaml">apiVersion: '1.0'
+name: 'variable example'
+version: '0.1'
 var:
   name: 'Susie'
 job:
@@ -293,6 +297,8 @@ is reached.</p>
 </code></pre>
 
 <p>A Fork structure is an array, of <code>task</code> lists. each list in the topmost array is executed in parallel.</p>
+<h1 id="examples">Examples</h1>
+<p><a href="https://github.com/KoduIsGreat/orca-examples">Here</a> is a git repository of examples for using orca</p>
 <h1 id="commands">Commands</h1>
 <p>Orca currently provides a concise set of commands for running workflows.</p>
 <h2 id="run">run</h2>
@@ -364,5 +370,5 @@ Options:
 
 <!--
 MkDocs version : 1.0.4
-Build Date UTC : 2019-03-19 15:28:45
+Build Date UTC : 2019-04-03 13:48:34
 -->
