@@ -1,0 +1,14 @@
+apiVersion: '1.0'
+version: '0.1'
+name: referencing task outputs
+job:
+    - task: get_today
+      python: |
+        import datetime
+        today = datetime.datetime.utcnow()
+      outputs:
+        - today
+    - task: print_today
+      python: print(today)
+      inputs:
+        today: task.get_today.today

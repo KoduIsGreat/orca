@@ -1,4 +1,4 @@
-# Orca 0.5.0
+# Orca 0.5.3-dev0
 
 Orca is a workflow management solution similar in nature to [Airflow]() and [Luigi](),
 but specifically for microservices and is built with data streaming in mind. It attempts to provide
@@ -18,12 +18,12 @@ orca version
 ## Quickstart
 Create a file called orca.yml
 ```yaml
-apiversion: orca/'1.0'
-version: 0.1
+apiVersion: '1.0'
+version: '0.1'
 name: 'quickstart example'
 job:
     - task: hello_world
-      print: print('Hello World!')
+      python: print('Hello World!')
 
 
 ```
@@ -56,7 +56,7 @@ This section describes some core concepts to understand how to use orca
 An orca workflow, is a yaml document describing the actions that make up the workflow.
 Here is a simple "hello world" example
 ```yaml
-apiversion: orca/'1.0'
+apiVersion: '1.0'
 name: 'hello-workflow'
 version: 0.1
 job:
@@ -80,8 +80,9 @@ being with `var.`
 quoting our strings the one exception to  this rule is in the var section of the document. i.e if the variable is a string
 you must quote it!**
 ```yaml
-apiversion: orca/'1.0'
-version: 0.1
+apiVersion: '1.0'
+name: 'variable example'
+version: '0.1'
 var:
   name: 'Susie'
 job:
@@ -165,6 +166,11 @@ fork:
 ```
 
 A Fork structure is an array, of `task` lists. each list in the topmost array is executed in parallel.
+
+# Examples
+
+[Here](https://github.com/KoduIsGreat/orca-examples) is a git repository of examples for using orca
+
 # Commands
 Orca currently provides a concise set of commands for running workflows.
 

@@ -15,6 +15,9 @@ class DotFileHandlerTests(unittest.TestCase):
     def test_print_par_task(self):
         run_handler('par.yaml', DotfileHandler())
 
+    def test_print_for_task(self):
+        run_handler('for_with_variable.yaml', DotfileHandler())
+
 
 if __name__ == '__main__':
     unittest.main()
