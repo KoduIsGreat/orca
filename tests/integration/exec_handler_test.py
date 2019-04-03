@@ -11,6 +11,12 @@ class OrcaExecutionTest(unittest.TestCase):
     def test_imports_example(self):
         run_handler('imports.yaml', ExecutionHandler())
 
+    def test_http_json(self):
+        run_handler('http_json.yaml', ExecutionHandler())
+
+    def test_http_task(self):
+        run_handler('http.yaml', ExecutionHandler())
+
     def test_simple_python(self):
         run_handler('python.yaml', ExecutionHandler())
 
