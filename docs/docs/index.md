@@ -81,6 +81,7 @@ quoting our strings the one exception to  this rule is in the var section of the
 you must quote it!**
 ```yaml
 apiVersion: '1.0'
+name: 'variable example'
 version: '0.1'
 var:
   name: 'Susie'
@@ -165,6 +166,11 @@ fork:
 ```
 
 A Fork structure is an array, of `task` lists. each list in the topmost array is executed in parallel.
+
+# Examples
+
+[Here](https://github.com/KoduIsGreat/orca-examples) is a git repository of examples for using orca
+
 # Commands
 Orca currently provides a concise set of commands for running workflows.
 
