@@ -4,7 +4,7 @@ import requests
 import json
 import re
 from csip import Client
-from typing import List, Dict
+from typing import Dict
 from orca.core.tasks import OrcaTask
 from orca.core.config import task, log, OrcaConfig
 from orca.core.ledger import Ledger
@@ -20,29 +20,6 @@ from orca.core.config import var  # noqa: F401
 
 def values_tostr(d: Dict) -> Dict:
     return {key: str(value) for key, value in d.items()}
-
-
-def handle_csip_result(response: Dict, outputs: List, name: str) -> Dict:
-    d = {}
-    for k, v in response.items():
-        if k in outputs:
-            try:
-                d[name + "." + k] = v['value']
-            except KeyError as e:
-                raise ExecutionError(
-                    "Output variable {0} not found, message: {1}," +
-                    "\n the response from the task was: {2}".format(k, e, json.dumps(response, indent=2)))
-    return d
-
-
-def handle_python_result(outputs: List, name: str, task_locals: Dict) -> Dict:
-    d = {}
-    for out in outputs:
-        try:
-            d[name + '.' + out] = task_locals[out]
-        except KeyError as e:
-            raise ExecutionError("Task output not found: {0}".format(out), e)
-    return d
 
 
 #############################################
@@ -271,9 +248,10 @@ class ExecutionHandler(OrcaHandler):
                 else:
                     client.add_data(key, value)
             client = client.execute(_task.csip)
-            return handle_csip_result(client.data, _task.outputs, _task.name)
+            for k, v in client.data.items():
+                _task.locals[k] = v['value']
         except requests.exceptions.HTTPError as e:
-            raise ExecutionError(e)
+            raise ExecutionError('An Error occured while making the request:\n {0}'.format(e.response.content))
 
     def handle_http(self, _task: OrcaTask) -> None:
         def is_dotted(d) -> Dict:
@@ -381,6 +359,8 @@ class ExecutionHandler(OrcaHandler):
                 exec(_task.python, _task.locals)
             else:
                 with open(resolved_file, 'r') as script:
+                    _task.locals['__file__'] = resolved_file  # if they want to reference __file__ in their script
+                    _task.locals['__name__'] = script.name  # or the name
                     _python = script.read()
                     exec(_python, _task.locals)
                     if 'callable' in config:

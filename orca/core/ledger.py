@@ -9,6 +9,7 @@ from orca.core.config import OrcaConfig, log
 from typing import Dict, List
 from datetime import datetime
 from pykafka import KafkaClient
+from dotted.collection import DottedCollection
 
 
 class Ledger(object):
@@ -28,6 +29,15 @@ class Ledger(object):
 
     def _create_entry(self, task: OrcaTask) -> Dict:
         """Create a dictionary entry to record in a ledger"""
+
+        def to_serializable(d):
+            for k, v in d.items():
+                if isinstance(v, datetime):
+                    d[k] = str(v)
+                elif isinstance(v, DottedCollection):
+                    d[k] = v.to_python()
+            return d
+
         d = {
             # the workflow file
             'orca_file': os.path.abspath(self.config.get_yaml_file()),
@@ -39,7 +49,7 @@ class Ledger(object):
             'task_uuid': str(self._id),  # the uuid of the current run
             'task_status': task.status,  # status of the run
             'task_time': str(datetime.now()),  # task execution time
-            'task_data': task.locals,  # task data
+            'task_data': to_serializable(task.locals),  # task data
         }
         if log.isEnabledFor(logging.DEBUG):
             log.debug('ledger: {0}'.format(d))

@@ -10,6 +10,6 @@ job:
   - task: get_area_data
     http: https://demo.waterforecast.rtiamanzi.org/api/v1/areas/data
     inputs:
-      time: 2019-04-03T10:00:00Z
+      time: '2019-04-03T10:00:00Z'
     outputs:
       - json

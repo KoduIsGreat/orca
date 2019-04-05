@@ -55,7 +55,6 @@ class OrcaConfig(object):
         self.file = file
         self.api_version = config.get('apiVersion')
         self.conf = config.get('conf', {})
-        self.deps = config.get('dependencies', [])
         self.var = config.get('var', {})
         self.job = config.get('job')
         self.version = config.get('version', '0.0')
@@ -75,15 +74,6 @@ class OrcaConfig(object):
 
     def get_name(self) -> str:
         return self.name
-
-    def __resolve_dependencies(self):
-        for dep in self.deps:
-            try:
-                exec("import " + dep, globals())
-                log.debug("importing dependency: '{0}'".format(dep))
-            except Exception as e:
-                raise ConfigurationError(
-                    "Cannot not resolve the '{0}' dependency".format(dep), e)
 
     def __set_vars(self, variables: Dict, args: List[str]) -> None:
         """put all variables as globals"""
