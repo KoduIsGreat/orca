@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 site_name: Orca 0.5.6-dev0
 nav:
   - Home: index.md
@@ -9,4 +10,17 @@ nav:
 #  - API Reference: api.md
 #  - About: about.md
 
+=======
+site_name: Orca 0.5.3-dev0
+nav:
+  - Home: index.md
+#  - Concepts: concepts.md
+#  - Commands: commands.md
+  - Tasks: tasks.md
+#  - Examples: examples.md
+#  - Workflow Reference: workflow.md
+#  - API Reference: api.md
+#  - About: about.md
+
+>>>>>>> origin/develop
 theme: readthedocs

@@ -6,8 +6,13 @@ from tests.util import run_handler
 
 class OrcaExecutionTest(unittest.TestCase):
 
-    def test_comprehensive_example(self):
-        run_handler('datetime.yaml', ExecutionHandler())
+    # def test_comprehensive_example(self):
+    #     run_handler('datetime.yaml', ExecutionHandler())
+    def test_imports_example(self):
+        run_handler('imports.yaml', ExecutionHandler())
+
+    def test_simple_python(self):
+        run_handler('python.yaml', ExecutionHandler())
 
     def test_inline_bash_task(self):
         run_handler('bash-inline.yaml', ExecutionHandler())

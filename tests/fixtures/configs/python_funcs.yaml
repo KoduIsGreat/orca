@@ -3,6 +3,14 @@ name: 'test python functions'
 version: '0.0'
 job:
 
+  - task: do_something_no_args
+    python: ./test_func.py
+    config:
+      callable: do_something_no_args
+      returns: message
+    outputs:
+      - message
+
   - task: calling_first_model
     python: ./test_func.py
     config:
@@ -48,3 +56,4 @@ job:
     python: print(value)
     inputs:
       value: task.call_extra_model.value
+

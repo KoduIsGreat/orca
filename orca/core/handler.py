@@ -118,7 +118,7 @@ class OrcaHandler(metaclass=ABCMeta):
     def handle_python(self, task: OrcaTask) -> Dict:
         pass
 
-    def __select_handler(self, task_dict: Dict):
+    def select_handler(self, task_dict: Dict):
         if 'csip' in task_dict:
             return self.handle_csip
         elif 'http' in task_dict:
@@ -139,32 +139,38 @@ class OrcaHandler(metaclass=ABCMeta):
 
     def _resolve_file_path(self, name: str, ext: str) -> str:
         """ resolve the full qualified path name"""
-
-        # potential value resolution if this should be a file name
-        try:
-            name = eval(str(name), globals())
-        except Exception as e:
-            # ok, never mind
-            log.debug(e)
-
-        if os.path.isfile(name):
-            return name
-        else:
-            # maybe change this, because of testing
-            if hasattr(self, 'config'):
-                yaml_dir = self.config.get_yaml_dir()
+        def resolve_file_path(handler: OrcaHandler, _name: str) -> str:
+            """ resolve the full qualified path name"""
+            if os.path.isfile(_name):
+                return _name
+            # otherwise find the relative dir
+            elif hasattr(handler, 'config'):
+                yaml_dir = handler.config.get_yaml_dir()
             else:
                 yaml_dir = "."
-            rel_path = os.path.join(yaml_dir, name)
+
+            rel_path = os.path.join(yaml_dir, _name)
             if os.path.isfile(rel_path):
                 # path relative to yaml file
                 return rel_path
             else:
-                if name.endswith(ext):
-                    # this should be a file but it's not.
-                    raise ConfigurationError(
-                        'File not found: "{0}"'.format(name))
-                return None
+                # this should be a file but it's not.
+                raise ConfigurationError(
+                    'File not found: "{0}"'.format(_name))
+        # check to see if the value ends with an extension
+        if name.endswith(ext):
+            # check if its an absolute path
+            return resolve_file_path(self, name)
+        # check if its a variable
+        elif name.startswith('var.'):
+            try:
+                name = eval(str(name), globals())
+            except Exception as e:
+                # ok, never mind
+                log.debug(e)
+            if not name:
+                return name
+            return resolve_file_path(self, name)
 
     def _handle_task(self, task_dict: Dict) -> OrcaTask:
         name = task_dict.get('task', None)
@@ -177,21 +183,21 @@ class OrcaHandler(metaclass=ABCMeta):
         task_locals = self.resolve_task_inputs(task_dict)
         _task = OrcaTask(task_dict, task_locals)
 
-        log.debug("task '{0}' locals pre: {1}".format(_task.name, task_locals))
+        log.debug("task '{0}' locals pre: {1}".format(_task.name, _task.locals))
 
         # select the handler and call handle
-        handle = self.__select_handler(task_dict)
+        handle = self.select_handler(task_dict)
         log.info('Starting task {0}'.format(name))
-        result = handle(_task)
+        handle(_task)
         log.info('Task {0} completed'.format(name, ))
 
         log.debug("task '{0}' locals post: {1}".format(
-            _task.name, task_locals))
+            _task.name, _task.locals))
 
         # put the task_locals into the global task dictonary
         # this includes input and outputs
         task[_task.name] = {}
-        for k, v in task_locals.items():
+        for k, v in _task.locals.items():
             task[_task.name][k] = v
 
         return _task
@@ -325,7 +331,7 @@ class ExecutionHandler(OrcaHandler):
         func_name = config.get('callable')
         var_name = config.get('returns', '')
         # match against a function definition string : def <funcname> ( args,...)
-        pattern = r'((?P<keyword>def)\s?(?P<function>\w+)\s?\((?P<args>(?P<arg>\w+(,\s?)?)+)\))'
+        pattern = r'((?P<keyword>def)\s?(?P<function>\w+)\s?\((?P<args>(?P<arg>\w+(,\s?)?)+)?\))'
         # find all functions in the file
         all_funcs = re.findall(pattern, script)
         # take each function string and break it up into a dictionary so we can easily extract the arguments
@@ -334,7 +340,8 @@ class ExecutionHandler(OrcaHandler):
         fn_dict = [d for d in dicts if d.get('function') == func_name][0]
         # make the string that will be eval'd
         assignment = var_name if var_name == '' else var_name + ' = '
-        return '{0}{1}({2})'.format(assignment, func_name, fn_dict.get('args', ''))
+        args = '' if fn_dict.get('args', '') is None else fn_dict.get('args')
+        return '{0}{1}({2})'.format(assignment, func_name, args)
 
     def handle_python(self, _task: OrcaTask):
         log.debug("  exec python file : " + _task.python)
@@ -435,7 +442,7 @@ class DotfileHandler(OrcaHandler):
     """Handles printing of a dot file"""
 
     def __init__(self):
-        super().__init__()
+        super(OrcaHandler).__init__()
 
     def handle(self, config: OrcaConfig) -> None:
         self.config = config
@@ -580,3 +587,22 @@ class DotfileHandler(OrcaHandler):
 
     def handle_python(self, task: OrcaTask):
         self._ht(task.name, 'note', task.python)
+
+    def _handle_task(self, task_dict: Dict):
+
+        def select_handler(self, task_dict: Dict):
+            if 'csip' in task_dict:
+                return self.handle_csip
+            elif 'http' in task_dict:
+                return self.handle_http
+            elif 'bash' in task_dict:
+                return self.handle_bash
+            elif 'python' in task_dict:
+                return self.handle_python
+            else:
+                raise ConfigurationError(
+                    'Invalid task type: "{0}"'.format(task_dict))
+
+        handle = select_handler(self, task_dict)
+        _task = OrcaTask(task_dict, {})
+        handle(_task)

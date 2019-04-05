@@ -80,7 +80,7 @@ A task has a common list of properties and structure amongst all the different t
 Each orca task once completed persists its state for reuse later.
 ```yaml
 apiVersion: '1.0'
-version: 0.1
+version: '0.1'
 name: referencing task outputs
 job:
     - task: get_today
