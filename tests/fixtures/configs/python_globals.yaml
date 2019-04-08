@@ -1,0 +1,9 @@
+apiVersion: '1.0'
+name: python globals test
+version: '0.1'
+
+job:
+  - task: test
+    python: file.py
+    outputs:
+      - dir

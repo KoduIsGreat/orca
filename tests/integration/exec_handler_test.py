@@ -11,8 +11,17 @@ class OrcaExecutionTest(unittest.TestCase):
     def test_imports_example(self):
         run_handler('imports.yaml', ExecutionHandler())
 
+    def test_http_json(self):
+        run_handler('http_json.yaml', ExecutionHandler())
+
+    def test_http_task(self):
+        run_handler('http.yaml', ExecutionHandler())
+
     def test_simple_python(self):
         run_handler('python.yaml', ExecutionHandler())
+
+    def test_python_globals(self):
+        run_handler('python_globals.yaml', ExecutionHandler())
 
     def test_inline_bash_task(self):
         run_handler('bash-inline.yaml', ExecutionHandler())
@@ -28,6 +37,9 @@ class OrcaExecutionTest(unittest.TestCase):
 
     def test_switch_task(self):
         run_handler('switch.yaml', ExecutionHandler())
+
+    # def test_http_python_csip(self):
+    #     run_handler('http_python_csip.yaml', ExecutionHandler())
 
     def test_var1_task(self):
         run_handler('var1.yaml', ExecutionHandler())

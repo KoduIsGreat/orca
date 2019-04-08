@@ -1,0 +1,35 @@
+apiVersion: '1.0'
+
+version: '0.1'
+name: 'complex example test'
+job:
+  - task: catchments
+    http: http://demo.waterforecast.rtiamanzi.org/api/v1/catchments
+    outputs:
+      - json
+
+  - task: get_ids
+    python: |
+      feature_ids = list( map (lambda c: c['id'], features) )
+    inputs:
+      features: task.catchments.json.features
+    outputs:
+      - feature_ids
+
+  - task: harvest_nwm
+    csip: http://ehs-csip-nwm.eastus.azurecontainer.io:8080/csip.nwm/d/netcdf/1.0
+    inputs:
+      comids: task.get_ids.feature_ids
+      fcTimesToHarvest: [0]
+      property: 'streamflow'
+      type: 'short_range'
+    outputs:
+      - forecasts
+
+  - task: normalize
+    csip: http://ehs-csip-norm.eastus.azurecontainer.io:8080/csip.normalize/d/tslist/1.0
+    inputs:
+      timeSeries: task.harvest_nwm.forecasts
+      operation: 'zscore'
+    outputs:
+      - data

@@ -4,7 +4,7 @@ import requests
 import json
 import re
 from csip import Client
-from typing import List, Dict
+from typing import Dict
 from orca.core.tasks import OrcaTask
 from orca.core.config import task, log, OrcaConfig
 from orca.core.ledger import Ledger
@@ -20,38 +20,6 @@ from orca.core.config import var  # noqa: F401
 
 def values_tostr(d: Dict) -> Dict:
     return {key: str(value) for key, value in d.items()}
-
-
-def handle_service_result(response: Dict, outputs, name: str) -> Dict:
-    d = {}
-    for k, v in response.items():
-        log.debug(" handling req result props: {0} -> {1}".format(k, str(v)))
-        if k in outputs:
-            d[name + "." + k] = v
-    return d
-
-
-def handle_csip_result(response: Dict, outputs: List, name: str) -> Dict:
-    d = {}
-    for k, v in response.items():
-        if k in outputs:
-            try:
-                d[name + "." + k] = v['value']
-            except KeyError as e:
-                raise ExecutionError(
-                    "Output variable {0} not found, message: {1}," +
-                    "\n the response from the task was: {2}".format(k, e, json.dumps(response, indent=2)))
-    return d
-
-
-def handle_python_result(outputs: List, name: str, task_locals: Dict) -> Dict:
-    d = {}
-    for out in outputs:
-        try:
-            d[name + '.' + out] = task_locals[out]
-        except KeyError as e:
-            raise ExecutionError("Task output not found: {0}".format(out), e)
-    return d
 
 
 #############################################
@@ -139,6 +107,7 @@ class OrcaHandler(metaclass=ABCMeta):
 
     def _resolve_file_path(self, name: str, ext: str) -> str:
         """ resolve the full qualified path name"""
+
         def resolve_file_path(handler: OrcaHandler, _name: str) -> str:
             """ resolve the full qualified path name"""
             if os.path.isfile(_name):
@@ -157,6 +126,7 @@ class OrcaHandler(metaclass=ABCMeta):
                 # this should be a file but it's not.
                 raise ConfigurationError(
                     'File not found: "{0}"'.format(_name))
+
         # check to see if the value ends with an extension
         if name.endswith(ext):
             # check if its an absolute path
@@ -278,30 +248,66 @@ class ExecutionHandler(OrcaHandler):
                 else:
                     client.add_data(key, value)
             client = client.execute(_task.csip)
-            return handle_csip_result(client.data, _task.outputs, _task.name)
+            for k, v in client.data.items():
+                _task.locals[k] = v['value']
         except requests.exceptions.HTTPError as e:
-            raise ExecutionError(e)
+            raise ExecutionError('An Error occured while making the request:\n {0}'.format(e.response.content))
 
-    def handle_http(self, _task: OrcaTask) -> Dict:
-        url = _task.http
-        name = _task.name
-        inputs = _task.locals
-        headers = _task.config.get('header')
-        content_type = headers.get('content-type', 'text/plain')
+    def handle_http(self, _task: OrcaTask) -> None:
+        def is_dotted(d) -> Dict:
+            if isinstance(d, DottedCollection):
+                return d.to_python()
+            return d
 
-        if 'method' not in _task.config:
-            raise ConfigurationError(
-                "requests service operator must include method: service {0}".format(name))
+        def handle_method(_task: OrcaTask) -> requests.Response:
+            try:
+                switch = {
+                    'GET': lambda _task: requests.get(_task.http, is_dotted(_task.locals), verify=False),
+                    'PUT': lambda _task, data: requests.put(_task.http, is_dotted(_task.locals), verify=False),
+                    'POST': lambda _task: requests.post(_task.http, json=is_dotted(_task.locals), verify=False),
+                    'DELETE': lambda _task: requests.delete(_task.http, verify=False)
+                }
+                m = _task.config.get('method', 'GET')
+                http = switch.get(m)
+                return http(_task)
+            except KeyError:
+                raise ConfigurationError(
+                    'task {0} defines an invalid http method: {1}'.format(_task.name, _task.config.get('method'))
+                )
 
-        if _task.config.get('method') == 'GET':
-            return handle_service_result(json.loads(requests.get(url, params=_task.config.get('params', None)).content),
-                                         _task.outputs, name)
-        elif _task.config['method'] == 'POST':
-            if isinstance(inputs, DottedCollection):
-                return handle_service_result(json.loads(requests.post(url, inputs.to_python()).content), _task.outputs,
-                                             name)
-            else:
-                return handle_service_result(json.loads(requests.post(url, inputs).content), _task.outputs, name)
+        def handle_response(response: requests.Response) -> Dict:
+            try:
+
+                switch = {
+                    'application/json': lambda r: {'json': json.loads(r.content)},
+                    'text/html': lambda r: {'html': r.content},
+                    'text/plain': lambda r: {'text': r.content}
+                }
+                ct = response.headers.get('content-type').split(';')[0]
+                transform_resp = switch.get(ct)
+                return transform_resp(response)
+            except KeyError:
+                raise ConfigurationError('an Invalid content type was defined')
+
+        http_response = handle_method(_task)
+
+        if http_response.status_code >= 400:
+            _task.status = 'failed'
+            raise ExecutionError(
+                'The http task {0} returned a non 200 status code: {1}'.format(_task.name, http_response.status_code)
+            )
+
+        _task_payload = handle_response(http_response)
+
+        for key in _task_payload.keys():
+            _task.locals[key] = _task_payload[key]
+
+        # remove after execution
+        keys_to_remove = [k for k in _task.locals if
+                          k not in _task.outputs and k not in _task.inputs]
+
+        for key in keys_to_remove:
+            del _task.locals[key]
 
     def handle_bash(self, _task: OrcaTask) -> Dict:
         env = {}
@@ -353,6 +359,8 @@ class ExecutionHandler(OrcaHandler):
                 exec(_task.python, _task.locals)
             else:
                 with open(resolved_file, 'r') as script:
+                    _task.locals['__file__'] = resolved_file  # if they want to reference __file__ in their script
+                    _task.locals['__name__'] = script.name  # or the name
                     _python = script.read()
                     exec(_python, _task.locals)
                     if 'callable' in config:
