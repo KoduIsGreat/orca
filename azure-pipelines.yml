@@ -49,12 +49,5 @@ steps:
       bump2version release
       python setup.py sdist bdist_wheel
       twine upload -r pypi -u $(pypiUser) -p $(pypiPW) dist/*
-      bump2version --no-tag patch
-      git push https://$(githubPAT)@github.com/KoduIsGreat/orca.git --tags
     displayName: create release version build & upload package
     condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
-  - script: |
-      bump2version patch
-      git push https://$(githubPAT)@github.com/KoduIsGreat/orca.git --tags
-    displayName: bump patch version
-    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/develop'))
