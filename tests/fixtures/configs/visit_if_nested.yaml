@@ -1,0 +1,22 @@
+apiVersion: '1.0'
+version: '0.1'
+name: 'if object test'
+var:
+  value: 6
+
+job:
+  - task: echo
+    bash: echo hello
+
+  - if: var.value == 5
+    do:
+      - task: conditional echo
+        bash: echo wow we're in a condition!
+
+      - if: var.value < 3
+        do:
+          - task: inner_condition
+            bash: echo wow were in a inner condition!
+
+  - task: last echo
+    bash: echo done
