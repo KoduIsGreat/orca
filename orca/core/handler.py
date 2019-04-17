@@ -5,8 +5,6 @@ import json
 import re
 from csip import Client
 from typing import Dict, Generator, List
-
-from orca.core.store import OrcaCache, connect
 from orca.core.tasks import OrcaTask
 from orca.core.config import task, log, OrcaConfig
 from orca.core.ledger import Ledger
@@ -18,9 +16,11 @@ from itertools import chain
 from orca.core.config import var  # noqa: F401
 
 
-# some global utility functions
-
-def walk_job(job: Dict, visit_all_tasks: bool = False):
+def walk(job: List, visit_all_tasks: bool = False):
+    """ Generator function that walks the job hierarchy
+        each iteration of the generator returns a dictionary containing the task definition.
+        In the case of fork clauses, each iteration returns a list of tasks to be executed in parallel.
+    """
     # control structures
     def empty():
         yield from ()
@@ -30,7 +30,7 @@ def walk_job(job: Dict, visit_all_tasks: bool = False):
         cond = condition_block['if']
         sequence = condition_block['do']
         if eval(cond, globals()) or visit_children:
-            return walk_job(sequence, visit_children)
+            return walk(sequence, visit_children)
         return empty()
 
     def _handle_switch(condition_block: Dict, visit_children: bool = False) -> Generator:
@@ -41,10 +41,10 @@ def walk_job(job: Dict, visit_all_tasks: bool = False):
         if visit_children:
             # gather all tasks from all conditions
             return chain.from_iterable([
-                walk_job(condition_block[k], visit_all_tasks) for k in condition_block.keys() if k != 'switch']
+                walk(condition_block[k], visit_all_tasks) for k in condition_block.keys() if k != 'switch']
             )
         elif seq is not None:
-            return walk_job(seq)
+            return walk(seq)
         else:
             return empty()
 
@@ -61,7 +61,7 @@ def walk_job(job: Dict, visit_all_tasks: bool = False):
             raise ConfigurationError(
                 'Not a valid identifier: "{0}"'.format(var))
         if visit_children:
-            return walk_job(condition_block['do'], visit_children)
+            return walk(condition_block['do'], visit_children)
 
         expr = var_expr[i + 1:]
         for i in eval(expr, globals()):
@@ -70,16 +70,18 @@ def walk_job(job: Dict, visit_all_tasks: bool = False):
             if isinstance(i, str):
                 q = "'"
             exec("{0}={2}{1}{2}".format(var, i, q), globals())
-            return walk_job(condition_block['do'])
+            return walk(condition_block['do'])
 
     def _handle_fork(jobs: Dict, visit_children: bool = False) -> List[List[OrcaTask]]:
         """Handle 'fork'"""
 
-        def get_tasks(j: Dict) -> List[OrcaTask]:
-            return [_t for _t in walk_job(j, visit_children)]
+        def get_tasks(j: List[OrcaTask]) -> List[OrcaTask]:
+            return [_t for _t in walk(j, visit_children)]
 
-        with ThreadPoolExecutor(max_workers=(len(jobs))) as executor:
-            return [executor.map(get_tasks, _job) for _job in jobs]
+        tasks = []
+        for _job in jobs:
+            tasks.append(get_tasks(_job))
+        return tasks
 
     for step in job:
         node = next(iter(step))
@@ -96,7 +98,7 @@ def walk_job(job: Dict, visit_all_tasks: bool = False):
                 yield t
         elif node.startswith("fork"):
             log.debug(" ---- fork: ")
-            for tl in _handle_fork(step['fork']):
+            for tl in _handle_fork(step['fork'], visit_all_tasks):
                 yield tl
         elif node == "switch":
             log.debug(" ---- switch: '{}'".format(step['switch']))
@@ -134,15 +136,15 @@ class OrcaHandler(metaclass=ABCMeta):
         self._handle_sequence(config.job)
         self.close()
 
-    def _handle_sequence(self, sequence: Dict, visit_all_children: bool = False) -> None:
+    def _handle_sequence(self, sequence: Dict) -> None:
         for step in sequence:
             node = next(iter(step))
             if node == "task":
                 log.debug(" ---- task: '{}'".format(step['task']))
-                yield step
+                self._handle_task(step)
             elif node == "if":
                 log.debug(" ---- if: '{}'".format(step['if']))
-                self._handle_if(step, visit_all_children)
+                self._handle_if(step)
             elif node == "for":
                 log.debug(" ---- for: '{}'".format(step['for']))
                 self._handle_for(step)
@@ -151,7 +153,7 @@ class OrcaHandler(metaclass=ABCMeta):
                 self._handle_fork(step['fork'])
             elif node == "switch":
                 log.debug(" ---- switch: '{}'".format(step['switch']))
-                self._handle_switch(step, visit_all_children)
+                self._handle_switch(step)
             else:
                 raise ConfigurationError(
                     'Invalid step in job: "{0}"'.format(node))
@@ -189,22 +191,10 @@ class OrcaHandler(metaclass=ABCMeta):
             raise ConfigurationError(
                 'Invalid task type: "{0}"'.format(task_dict))
 
-    # def resolve_task_inputs(self, task_dict: Dict) -> Dict:
-    #     inputs = task_dict.get('inputs', {})
-    #     if inputs:
-    #         return {k: eval(str(v), globals()) for k, v in inputs.items()}
-    #     return {}
-
-    def resolve_task_inputs(self, cache: OrcaCache, task_dict: Dict) -> Dict:
+    def resolve_task_inputs(self, task_dict: Dict) -> Dict:
         inputs = task_dict.get('inputs', {})
         if inputs:
-            d = {}
-            for k, v in inputs.items():
-                if str(v).startswith('task.'):
-                    d[k] = cache.get_task(v.split('.')[1])
-                else:
-                    d[k] = eval(str(v), globals())
-            return d
+            return {k: eval(str(v), globals()) for k, v in inputs.items()}
         return {}
 
     def _resolve_file_path(self, name: str, ext: str) -> str:
@@ -275,11 +265,11 @@ class OrcaHandler(metaclass=ABCMeta):
         return _task
 
     # control structures
-    def _handle_if(self, condition_block: Dict, visit_children: bool = False) -> None:
+    def _handle_if(self, condition_block: Dict) -> None:
         """Handle 'if'"""
         cond = condition_block['if']
         sequence = condition_block['do']
-        if eval(cond, globals()) or visit_children:
+        if eval(cond, globals()):
             self._handle_sequence(sequence)
 
     def _handle_switch(self, condition_block: Dict, visit_children: bool = False) -> None:
@@ -330,7 +320,6 @@ class ExecutionHandler(OrcaHandler):
 
     def __init__(self, ledger: Ledger = None):
         super().__init__()
-        self.cache = connect()
         self.ledger = ledger or Ledger()
 
     def handle(self, config: OrcaConfig) -> None:

@@ -16,6 +16,7 @@ python-snappy = {path = ".\\vendor\\python_snappy-0.5.4-cp37-cp37m-win_amd64.whl
 fastparquet = {path = ".\\vendor\\fastparquet-0.3.0-cp37-cp37m-win_amd64.whl"}
 "ruamel.yaml" = "==0.15.88"
 pystore = "*"
+pytest = "*"
 
 [dev-packages]
 setuptools = "*"

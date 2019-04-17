@@ -1,0 +1,31 @@
+apiVersion: '1.0'
+
+version: '0.1'
+name: 'nested job test'
+job:
+  - fork:
+     # first group of tasks
+     -  - task: test
+          python: |
+            m = 'Hello, {0}'
+          outputs:
+            - m
+        - task: format
+          python: |
+            f_m = m.format(name)
+          inputs:
+            message: task.tes.m
+            name: 'Brian'
+          outputs:
+            - f_m
+     # second group
+     -  - task: start2
+          python: var.afile
+     # third group
+     -  - task: start3
+          python: var.afile
+
+  # start3, start4, and start51 will join here
+  - task: start5
+    python: var.afile
+

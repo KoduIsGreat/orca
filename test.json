@@ -1,1 +1,0 @@
-{"orca_file": "C:\\Repositories\\orca\\tests\\fixtures\\configs\\simple_example.yaml", "orca_id": "'0.1'", "orca_name": "'simple example test'", "task_name": "test_basic_task", "task_uuid": "c6214b20-45f5-4cfe-8619-ab0b2b794e61", "task_status": "success", "task_time": "2019-04-15 11:34:59.377187", "task_data": {"a": 5, "b": 25}}

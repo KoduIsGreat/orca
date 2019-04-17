@@ -1,10 +1,10 @@
 from unittest import TestCase
 from orca.core.errors import ConfigurationError
 from tests.util import get_config
+import pytest
 
 
 class OrcaSchemaTest(TestCase):
-    pass
 
     def test_single_task(self):
         config = get_config('simple_example.yaml')
@@ -27,30 +27,29 @@ class OrcaSchemaTest(TestCase):
         assert config is not None
 
     def test_duplicate_kinds(self):
-        with self.assertRaises(ConfigurationError) as e:
+        with pytest.raises(ConfigurationError) as e:
             config = get_config('duplicate_kinds.yaml')
             assert config is not None
             print(e)
 
     def test_duplicate_outputs(self):
-        with self.assertRaises(ConfigurationError) as e:
-
+        with pytest.raises(ConfigurationError) as e:
             config = get_config('duplicate_outputs.yaml')
             assert config is not None
             print(e)
 
     def test_nested_dups(self):
-        with self.assertRaises(ConfigurationError) as e:
+        with pytest.raises(ConfigurationError) as e:
             config = get_config('nested_duplicates.yaml')
             assert config is not None
             print(e)
 
     def test_missing_api_version(self):
-        with self.assertRaises(ConfigurationError):
+        with pytest.raises(ConfigurationError):
             config = get_config('missing_api_version.yaml')
             assert config is not None
 
     def test_missing_api_version(self):
-        with self.assertRaises(ConfigurationError):
+        with pytest.raises(ConfigurationError):
             config = get_config('invalid_api_version.yaml')
             assert config is not None
