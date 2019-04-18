@@ -19,13 +19,13 @@ class OrcaCache:
     def get_task(self, task_name: str, snapshot=None, columns=None, filters=None):
         item = self.tasks.item(task_name, snapshot=snapshot, columns=columns, filters=filters)
         log.info('Fetching task {0} data'.format(task_name))
-        return OrcaTask(item.metadata, to_json(item.to_pandas()))
+        return to_json(item.to_pandas())
 
-    def put_task(self, task: OrcaTask, snapshot: str) -> None:
+    def put_task(self, task: OrcaTask, snapshot: str = None) -> None:
         log.info('Caching task {0} data.'.format(task.name))
         self.tasks.write(task.name, data=json_normalize(task.locals), metadata=task.task_data, overwrite=True)
         log.info('Cache complete, versioning task data')
-        self.tasks.create_snapshot(snapshot)
+        # self.tasks.create_snapshot(snapshot)
 
     def create_snapshot(self):
         snapshot = uuid4()

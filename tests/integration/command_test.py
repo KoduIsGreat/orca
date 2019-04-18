@@ -13,3 +13,7 @@ class OrcaCommandTest(unittest.TestCase):
     def test_version(self):
         runner = CliRunner()
         runner.invoke(commands.version)
+
+    def test_execute(self):
+        runner = CliRunner()
+        runner.invoke(commands.execute, [get_config_path('simple_example.yaml')])

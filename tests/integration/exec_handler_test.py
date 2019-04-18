@@ -1,7 +1,8 @@
 import unittest
 from orca.core.handler import ExecutionHandler
 from orca.core.errors import ExecutionError
-from tests.util import run_handler
+from tests.util import run_handler, get_config
+from orca.core import engine
 
 
 class OrcaExecutionTest(unittest.TestCase):
@@ -9,7 +10,8 @@ class OrcaExecutionTest(unittest.TestCase):
     # def test_comprehensive_example(self):
     #     run_handler('datetime.yaml', ExecutionHandler())
     def test_imports_example(self):
-        run_handler('imports.yaml', ExecutionHandler())
+        config = get_config('imports.yaml')
+        engine.execute(config)
 
     def test_http_json(self):
         run_handler('http_json.yaml', ExecutionHandler())
@@ -36,7 +38,9 @@ class OrcaExecutionTest(unittest.TestCase):
         run_handler('for.yaml', ExecutionHandler())
 
     def test_switch_task(self):
-        run_handler('switch.yaml', ExecutionHandler())
+        # run_handler('switch.yaml', ExecutionHandler())
+        config = get_config('switch.yaml')
+        engine.execute(config)
 
     # def test_http_python_csip(self):
     #     run_handler('http_python_csip.yaml', ExecutionHandler())

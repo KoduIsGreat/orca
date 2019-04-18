@@ -1,5 +1,4 @@
-
-import orca as o   # must be renamed
+import orca as o  # must be renamed
 from orca.core.config import OrcaConfig, log
 from orca.core.handler import ExecutionHandler
 from orca.core.handler import ValidationHandler
@@ -8,6 +7,7 @@ from orca.core.ledger import JSONFileLedger
 from orca.core.ledger import MongoLedger
 from orca.core.ledger import KafkaLedger
 from orca.core.errors import OrcaError
+from orca.core import engine
 
 import click
 import click_log
@@ -38,6 +38,7 @@ def check_format(ctx, param, value):
             "Invalid mongo connect string, expected '<host[:port]>/<db>/<col>'")
         ctx.exit()
     return c
+
 
 def check_format_kafka(ctx, param, value):
     if value is None:
@@ -81,6 +82,32 @@ def run(ledger_json, ledger_mongo, ledger_kafka, file, args):
         config = OrcaConfig.create(file, args)
         executor = ExecutionHandler(ledger)
         executor.handle(config)
+    except OrcaError as e:
+        log.error(e)
+
+
+# run a workflow:
+# python3 orca run --ledger-json /tmp/f.json for.yaml
+# python3 orca run --ledger-mongo localhost/orcadb1/ledgercol for.yaml
+#
+# maybe import file into a db:
+# mongoimport --db orca --collection ledger --file /tmp/f.json
+
+@orca.command()
+@click.option('--ledger-json', type=click.Path(), help='file ledger.')
+@click.option('--ledger-mongo', type=str,
+              help='mongodb ledger, TEXT format "<host[:port]>/<db>/<col>".', callback=check_format)
+@click.option('--ledger-kafka', type=str,
+              help='kafka ledger, TEXT format "<host[:port]>/topic".', callback=check_format_kafka)
+@click.argument('file', type=click.File('r'))
+@click.argument('args', nargs=-1)
+def execute(ledger_json, ledger_mongo, ledger_kafka, file, args):
+    """
+    Run an orca workflow.
+    """
+    try:
+        config = OrcaConfig.create(file, args)
+        engine.execute(config)
     except OrcaError as e:
         log.error(e)
 
