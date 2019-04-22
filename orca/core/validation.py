@@ -63,7 +63,7 @@ def check_variables(config: OrcaConfig):
 
 def check_url(url):
     try:
-        r = requests.head(url)
+        r = requests.head(url, verify=False)
         if r.status_code != 200:
             raise ConfigurationError('The url provided {0} was not accessible.'.format(url))
 

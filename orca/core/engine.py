@@ -5,7 +5,6 @@ from orca.core.ledger import Ledger
 from orca.core.tasks import OrcaTask
 from orca.core.handler import walk
 from orca.core.errors import ExecutionError
-from orca.core.store import connect
 from orca.core.validation import validate
 from concurrent.futures.thread import ThreadPoolExecutor
 import logging
@@ -14,6 +13,7 @@ import requests
 import subprocess as subp
 from csip import Client
 import json
+from orca.store.store import store
 log = logging.getLogger(__name__)
 
 
@@ -108,8 +108,8 @@ def execute_http(task: OrcaTask) -> None:
 
             switch = {
                 'application/json': lambda r: {'json': json.loads(r.content)},
-                'text/html': lambda r: {'html': r.content},
-                'text/plain': lambda r: {'text': r.content}
+                'text/html': lambda r: {'html': str(r.content)},
+                'text/plain': lambda r: {'text': str(r.content)}
             }
             ct = response.headers.get('content-type').split(';')[0]
             transform_resp = switch.get(ct)
@@ -159,7 +159,7 @@ def execute_bash(_task: OrcaTask) -> Dict:
     return {}
 
 
-def execute(config: OrcaConfig, ledger: Ledger = None):
+def execute(config: OrcaConfig, validator=validate, ledger: Ledger = None):
     """
     Closure for executing an orca workflow,
     Validation is performed first then connecting to the pystore cache, then execution
@@ -170,17 +170,10 @@ def execute(config: OrcaConfig, ledger: Ledger = None):
     """
     def execute_job(job: List[Dict], snapshot=None):
         task_queue = walk(job)
-        concurrent_jobs = []
         for task in task_queue:
             if isinstance(task, list):
-                concurrent_jobs.clear()
-                while isinstance(task, list):
-                    tl = next(task_queue)
-                    concurrent_jobs.append(tl)
-
-                with ThreadPoolExecutor(max_workers=(len(concurrent_jobs))) as executor:
-                    for nested_job in concurrent_jobs:
-                        executor.submit(execute_job, nested_job)
+                with ThreadPoolExecutor(max_workers=1) as executor:
+                    executor.submit(execute_job, task)
             run_task(task, snapshot)
 
     def resolve_task(task: Dict, snapshot=None, ) -> OrcaTask:
@@ -192,13 +185,14 @@ def execute(config: OrcaConfig, ledger: Ledger = None):
                 if str(v).startswith('task.'):
                     split = str(v).split('.')
                     upstream_task = split[1]
-                    _locals[k] = store.get_task(upstream_task, snapshot=snapshot, columns=[])
+                    _locals[k] = workflow.task(upstream_task, filters=split[2:], snapshot=snapshot).data
                 elif str(v).startswith('var.'):
                     split = str(v).split('.')
                     defined_var = split[1]
                     _locals[k] = eval(str(config.var[defined_var]), globals())
                 else:
                     _locals[k] = eval(str(v), globals())
+
         return OrcaTask(task, _locals)
 
     def run_task(task: Dict, snapshot):
@@ -211,13 +205,13 @@ def execute(config: OrcaConfig, ledger: Ledger = None):
             execute_http(r_task)
         elif 'csip' in task:
             execute_csip(r_task)
-
-        store.put_task(r_task)
+        workflow.write(r_task.name, r_task.locals, meta=r_task.task_data, overwrite=True)
         if ledger:
             ledger.add(r_task)
 
-    validate(config)
-    store = connect(config)
+    validator(config)
+    cache = store('orca')
+    workflow = cache.workflow(config.name)
     execute_job(config.job)
 
 
