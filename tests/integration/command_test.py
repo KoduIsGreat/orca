@@ -17,3 +17,11 @@ class OrcaCommandTest(unittest.TestCase):
     def test_execute(self):
         runner = CliRunner()
         runner.invoke(commands.execute, [get_config_path('simple_example.yaml')])
+
+    def test_todot(self):
+        runner = CliRunner()
+        runner.invoke(commands.todot, [get_config_path('http_python_csip.yaml')])
+
+    def test_todot_leafs(self):
+        runner = CliRunner()
+        runner.invoke(commands.todot, [get_config_path('dot_test.yaml')])

@@ -40,7 +40,7 @@ class Ledger(object):
 
         d = {
             # the workflow file
-            'orca_file': os.path.abspath(self.config.get_yaml_file()),
+            'orca_file': os.path.abspath(self.config.yaml_file()),
             # the 'version' entry in the workflow file
             'orca_id': self.config.get_version(),
             # the 'version' entry in the workflow file (e.g. gitattribute)

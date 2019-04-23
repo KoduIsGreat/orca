@@ -4,9 +4,21 @@ version: '0.1'
 name: 'complex example test'
 job:
   - task: catchments
-    http: https://demo.waterforecast.rtiamanzi.org/api/v1/catchments
+    http: http://demo.waterforecast.rtiamanzi.org/api/v1/catchments
     outputs:
       - json
+
+  - task: get_property_type
+    python: |
+      property = 'streamflow'
+    outputs:
+      - property
+
+  - task: get_forecast_type
+    python: |
+      fc_type = 'short_range'
+    outputs:
+      - fc_type
 
   - task: get_ids
     python: |
@@ -21,12 +33,20 @@ job:
     inputs:
       comids: task.get_ids.feature_ids
       fcTimesToHarvest: [0]
-      property: 'streamflow'
-      type: 'short_range'
+      property: task.get_property_type
+      type: task.get_forecast_type
     outputs:
       - forecasts
 
   - task: normalize
+    csip: http://ehs-csip-norm.eastus.azurecontainer.io:8080/csip.normalize/d/tslist/1.0
+    inputs:
+      timeSeries: task.harvest_nwm.forecasts
+      operation: 'zscore'
+    outputs:
+      - data
+
+  - task: aggregate
     csip: http://ehs-csip-norm.eastus.azurecontainer.io:8080/csip.normalize/d/tslist/1.0
     inputs:
       timeSeries: task.harvest_nwm.forecasts

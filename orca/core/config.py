@@ -23,7 +23,7 @@ def resolve_file_path(config: 'OrcaConfig', name: str, ext: str) -> str:
         if os.path.isfile(_name):
             return _name
         # otherwise find the relative dir
-        yaml_dir = config.get_yaml_dir()
+        yaml_dir = config.yaml_dir
         rel_path = os.path.join(yaml_dir, _name)
         if os.path.isfile(rel_path):
             # path relative to yaml file
@@ -96,10 +96,12 @@ class OrcaConfig(object):
 
         self.__set_vars({} if self.var is None else self.var,)
 
-    def get_yaml_dir(self) -> str:
+    @property
+    def yaml_dir(self) -> str:
         return os.path.dirname(self.file) if self.file is not None else "."
 
-    def get_yaml_file(self) -> str:
+    @property
+    def yaml_file(self) -> str:
         return self.file
 
     def get_version(self) -> str:

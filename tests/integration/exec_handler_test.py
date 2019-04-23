@@ -6,7 +6,7 @@ from tests.fixtures.fixtures import config
 
 config = config
 
-def test_imports_example(config):
+def test_dates_example(config):
     engine.execute(config('imports.yaml'))
 
 
@@ -46,8 +46,8 @@ def test_switch_task(config):
     engine.execute(config('switch.yaml'))
 
 
-# def test_http_python_csip(config):
-#     run_handler('http_python_csip.yaml', ExecutionHandler())
+def test_http_python_csip(config):
+    engine.execute(config('http_python_csip.yaml'))
 
 
 def test_var1_task(config):

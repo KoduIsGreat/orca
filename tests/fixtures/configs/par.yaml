@@ -11,17 +11,22 @@ job:
   - fork:
      # first group of tasks
      -  - task: start1
-          python: var.afile
+          python: |
+            print('staring start1')
         - task: start4
-          python: var.afile
+          python: |
+            print('starting start4')
      # second group      
      -  - task: start2
-          python: var.afile
+          python: |
+            print('starting start2')
      # third group     
      -  - task: start3
-          python: var.afile
+          python: |
+            print('starting start3')
 
   # start3, start4, and start51 will join here          
   - task: start5
-    python: var.afile
+    python: |
+      print('starting final')
      

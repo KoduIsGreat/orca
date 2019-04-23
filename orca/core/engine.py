@@ -164,17 +164,26 @@ def execute(config: OrcaConfig, validator=validate, ledger: Ledger = None):
     Closure for executing an orca workflow,
     Validation is performed first then connecting to the pystore cache, then execution
     the `config` and `store` variables are treated as global within the closure scope.
+    :param validator: the validator function
     :param config: the orca configuration to execute
     :param ledger: the ledger to write too
     :return:
     """
     def execute_job(job: List[Dict], snapshot=None):
         task_queue = walk(job)
+        concurrent_jobs = []
         for task in task_queue:
+
             if isinstance(task, list):
-                with ThreadPoolExecutor(max_workers=1) as executor:
-                    executor.submit(execute_job, task)
-            run_task(task, snapshot)
+                concurrent_jobs.append(task)
+            elif len(concurrent_jobs) > 0:
+                with ThreadPoolExecutor(max_workers=len(concurrent_jobs)) as executor:
+                    for job in concurrent_jobs:
+                        executor.submit(execute_job, job)
+                concurrent_jobs.clear()
+                run_task(task, snapshot)
+            else:
+                run_task(task, snapshot)
 
     def resolve_task(task: Dict, snapshot=None, ) -> OrcaTask:
         inputs = task.get('inputs', {})

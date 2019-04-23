@@ -16,7 +16,7 @@ def build_path(*args):
 
 def __write_json__(file_path: Path, data={}):
     with file_path.open('w') as f:
-        json.dump(data, f)
+        json.dump(data, f, default=converter)
 
 
 def __read_json__(file_path: Path):
@@ -42,6 +42,10 @@ def write_data(path, data):
     data_file = build_path(path, 'data.json')
     __write_json__(data_file, data)
 
+
+def converter(o):
+    if isinstance(o, datetime):
+        return o.__str__()
 
 def read_metadata(path):
     """ use this to construct paths for future storage support """

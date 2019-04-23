@@ -1,14 +1,13 @@
 import orca as o  # must be renamed
 from orca.core.config import OrcaConfig, log
+from orca.core import graph
 from orca.core.handler import ExecutionHandler
 from orca.core.handler import ValidationHandler
-from orca.core.handler import DotfileHandler
 from orca.core.ledger import JSONFileLedger
 from orca.core.ledger import MongoLedger
 from orca.core.ledger import KafkaLedger
 from orca.core.errors import OrcaError
 from orca.core import engine
-
 import click
 import click_log
 
@@ -143,7 +142,16 @@ def todot(file, args):
     """
     try:
         config = OrcaConfig.create(file, args)
-        printer = DotfileHandler()
-        printer.handle(config)
-    except OrcaError as e:
+        file_name = file.name.replace('.yaml', '.dot')
+        with open(file_name, 'w') as f:
+            n = str(config.name).replace(' ', '_').replace('\'', '')
+            f.write(" digraph " + n + " {\n")
+            g = graph.loads(config)
+            visited = {}
+            for root in g.roots:
+                g.to_dot(f, visited_nodes=visited, current_node=root)
+            f.write("}\n")
+    except Exception as e:
+        print(e)
         log.error(e)
+        raise

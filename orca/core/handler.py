@@ -206,7 +206,7 @@ class OrcaHandler(metaclass=ABCMeta):
                 return _name
             # otherwise find the relative dir
             elif hasattr(handler, 'config'):
-                yaml_dir = handler.config.get_yaml_dir()
+                yaml_dir = handler.config.yaml_dir
             else:
                 yaml_dir = "."
 
@@ -664,7 +664,7 @@ class DotfileHandler(OrcaHandler):
     def close(self):
         self.dot.append("{0} -> END".format(self.last_task))
         self.dot.append("}")
-        path, ext = os.path.splitext(self.config.get_yaml_file())
+        path, ext = os.path.splitext(self.config.yaml_file)
         with open(path + ".dot", "w") as text_file:
             print("\n".join(self.dot), file=text_file)
         log.info("generated dot file '" + path + ".dot'")
