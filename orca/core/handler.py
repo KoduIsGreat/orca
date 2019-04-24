@@ -16,7 +16,7 @@ from itertools import chain
 from orca.core.config import var  # noqa: F401
 
 
-def walk(job: List, visit_all_tasks: bool = False):
+def walk(job: List, run_globals={}, visit_all_tasks: bool = False):
     """ Generator function that walks the job hierarchy
         each iteration of the generator returns a dictionary containing the task definition.
         In the case of fork clauses, each iteration returns a list of tasks to be executed in parallel.
@@ -29,19 +29,19 @@ def walk(job: List, visit_all_tasks: bool = False):
         """Handle 'if'"""
         cond = condition_block['if']
         sequence = condition_block['do']
-        if eval(cond, globals()) or visit_children:
+        if eval(cond, globals(), run_globals) or visit_children:
             return walk(sequence, visit_children)
         return empty()
 
     def _handle_switch(condition_block: Dict, visit_children: bool = False) -> Generator:
         """Handle 'switch'"""
         cond = condition_block['switch']
-        case = eval(cond, globals())
+        case = eval(cond, globals(), run_globals)
         seq = condition_block.get(case, condition_block.get('default', None))
         if visit_children:
             # gather all tasks from all conditions
             return chain.from_iterable([
-                walk(condition_block[k], visit_all_tasks) for k in condition_block.keys() if k != 'switch']
+                walk(condition_block[k], run_globals, visit_all_tasks) for k in condition_block.keys() if k != 'switch']
             )
         elif seq is not None:
             return walk(seq)
@@ -64,19 +64,20 @@ def walk(job: List, visit_all_tasks: bool = False):
             return walk(condition_block['do'], visit_children)
 
         expr = var_expr[i + 1:]
-        for i in eval(expr, globals()):
+        for i in eval(expr, globals(), run_globals):
             # mapping loop variable 'i' to 'var'
             q = ''
             if isinstance(i, str):
                 q = "'"
-            exec("{0}={2}{1}{2}".format(var, i, q), globals())
+            s = "{0}={2}{1}{2}".format(var, i, q)
+            exec(s, globals(), run_globals)
             return walk(condition_block['do'])
 
     def _handle_fork(jobs: Dict, visit_children: bool = False) -> List[List[OrcaTask]]:
         """Handle 'fork'"""
 
         def get_tasks(j: List[OrcaTask]) -> List[OrcaTask]:
-            return [_t for _t in walk(j, visit_children)]
+            return [_t for _t in walk(j, run_globals, visit_children)]
 
         tasks = []
         for _job in jobs:

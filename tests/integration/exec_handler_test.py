@@ -7,72 +7,75 @@ from tests.fixtures.fixtures import config
 config = config
 
 def test_dates_example(config):
-    engine.execute(config('imports.yaml'))
+    engine.start(config('imports.yaml'))
 
 
 def test_http_json(config):
-    engine.execute(config('http_json.yaml'))
+    engine.start(config('http_json.yaml'))
 
 
 def test_http_task(config):
-    engine.execute(config('http.yaml'))
+    engine.start(config('http.yaml'))
 
 
 def test_simple_python(config):
-    engine.execute(config('python.yaml'))
+    engine.start(config('python.yaml'))
 
 
 def test_python_globals(config):
-    engine.execute(config('python_globals.yaml'))
+    engine.start(config('python_globals.yaml'))
 
 
 def test_inline_bash_task(config):
-    engine.execute(config('bash-inline.yaml'))
+    engine.start(config('bash-inline.yaml'))
 
 
 def test_csip_task(config):
-    engine.execute(config('csip.yaml'))
+    engine.start(config('csip.yaml'))
 
 
 def test_fork_task(config):
-    engine.execute(config('par.yaml'))
+    engine.start(config('par.yaml'))
 
 
 def test_for_task(config):
-    engine.execute(config('for.yaml'))
+    engine.start(config('for.yaml'))
+
+def test_for_vars(config):
+    engine.start(config('for_with_variable.yaml'))
 
 
 def test_switch_task(config):
-    engine.execute(config('switch.yaml'))
+    engine.start(config('switch.yaml'))
 
 
 def test_http_python_csip(config):
-    engine.execute(config('http_python_csip.yaml'))
+    engine.start(config('http_python_csip.yaml'))
 
 
 def test_var1_task(config):
-    engine.execute(config('var1.yaml'))
+    engine.start(config('var1.yaml'))
 
 
 def test_var2_task(config):
-    engine.execute(config('var2.yaml'))
+    engine.start(config('var2.yaml'))
 
 
 def test_var3_task(config):
-    engine.execute(config('var3.yaml'))
+    engine.start(config('var3.yaml'))
 
 
 def test_var4_task(config):
-    engine.execute(config('var4.yaml'))
+    engine.start(config('var4.yaml'))
 
 
 def test_python_func(config):
-    engine.execute(config('python_funcs.yaml'))
+    engine.start(config('python_funcs.yaml'))
 
 
 def test_bad_python_func(config):
     with pytest.raises(ExecutionError):
-        engine.execute(config('bad_python_func.yaml'))
+        engine.start(config('bad_python_func.yaml'))
 
 
 if __name__ == '__main__':

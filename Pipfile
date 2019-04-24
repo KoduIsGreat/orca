@@ -12,19 +12,16 @@ click-log = "==0.3.2"
 dotted = "==0.1.8"
 pymongo = "==3.7.2"
 pykafka = "==2.8.0"
-python-snappy = {path = ".\\vendor\\python_snappy-0.5.4-cp37-cp37m-win_amd64.whl"}
-fastparquet = {path = ".\\vendor\\fastparquet-0.3.0-cp37-cp37m-win_amd64.whl"}
 "ruamel.yaml" = "==0.15.88"
-pystore = "*"
-pytest = "*"
+pandas = "*"
 
 [dev-packages]
 setuptools = "*"
 wheel = "*"
 flake8 = "*"
-pytest = "*"
 mkdocs = "*"
 "bump2version" = "*"
+pytest = "*"
 
 [requires]
 python_version = "3.7"

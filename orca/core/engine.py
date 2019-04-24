@@ -14,6 +14,8 @@ import subprocess as subp
 from csip import Client
 import json
 from orca.store.store import store
+from orca.store.workflow import Workflow
+
 log = logging.getLogger(__name__)
 
 
@@ -86,7 +88,6 @@ def execute_csip(_task: OrcaTask) -> None:
 
 
 def execute_http(task: OrcaTask) -> None:
-
     def handle_method(_task: OrcaTask) -> requests.Response:
         try:
             switch = {
@@ -122,7 +123,8 @@ def execute_http(task: OrcaTask) -> None:
     if http_response.status_code >= 400:
         task.status = 'failed'
         raise ExecutionError(
-            'The http task {0} returned a non 200 status code: {1}'.format(task.name, http_response.status_code)
+            'The http task {0} returned a non ' +
+            '200 status\n status code: {1}\n url: {2}'.format(task.name, http_response.status_code, task.http)
         )
 
     _task_payload = handle_response(http_response)
@@ -159,7 +161,43 @@ def execute_bash(_task: OrcaTask) -> Dict:
     return {}
 
 
-def execute(config: OrcaConfig, validator=validate, ledger: Ledger = None):
+def __resolve_task__(task: Dict, config: OrcaConfig, cache: Workflow, snapshot=None, run_globals={}) -> OrcaTask:
+    inputs = task.get('inputs', {})
+    _locals = {}
+    if inputs:
+        inputs = task.get('inputs', {})
+        for k, v in inputs.items():
+            if str(v).startswith('task.'):
+                split = str(v).split('.')
+                upstream_task = split[1]
+                _locals[k] = cache.task(upstream_task, filters=split[2:], snapshot=snapshot).data
+            elif str(v).startswith('var.'):
+                split = str(v).split('.')
+                defined_var = split[1]
+                _locals[k] = eval(str(config.var[defined_var]), globals())  # this should change
+            else:
+                _locals[k] = eval(str(v), run_globals)
+
+    return OrcaTask(task, _locals)
+
+
+def __run_task__(task: Dict, config: OrcaConfig, workflow: Workflow, snapshot=None, ledger: Ledger = None,
+                 run_globals={}):
+    r_task = __resolve_task__(task, config, workflow, snapshot=snapshot, run_globals=run_globals)
+    if 'python' in task:
+        execute_python(r_task, config)
+    elif 'bash' in task:
+        execute_bash(r_task)
+    elif 'http' in task:
+        execute_http(r_task)
+    elif 'csip' in task:
+        execute_csip(r_task)
+    workflow.write(r_task.name, r_task.locals, meta=r_task.task_data, overwrite=True)
+    if ledger:
+        ledger.add(r_task)
+
+
+def start(config: OrcaConfig, validator=validate, ledger: Ledger = None):
     """
     Closure for executing an orca workflow,
     Validation is performed first then connecting to the pystore cache, then execution
@@ -169,8 +207,10 @@ def execute(config: OrcaConfig, validator=validate, ledger: Ledger = None):
     :param ledger: the ledger to write too
     :return:
     """
-    def execute_job(job: List[Dict], snapshot=None):
-        task_queue = walk(job)
+
+    def execute_job(job: List[Dict], _config: OrcaConfig, _cache: Workflow, _ledger: Ledger, snapshot=None):
+        run_globals = {}  # scoped variables per "job"
+        task_queue = walk(job, run_globals=run_globals)
         concurrent_jobs = []
         for task in task_queue:
 
@@ -181,46 +221,10 @@ def execute(config: OrcaConfig, validator=validate, ledger: Ledger = None):
                     for job in concurrent_jobs:
                         executor.submit(execute_job, job)
                 concurrent_jobs.clear()
-                run_task(task, snapshot)
+                __run_task__(task, _config, _cache, snapshot, _ledger, run_globals)
             else:
-                run_task(task, snapshot)
-
-    def resolve_task(task: Dict, snapshot=None, ) -> OrcaTask:
-        inputs = task.get('inputs', {})
-        _locals = {}
-        if inputs:
-            inputs = task.get('inputs', {})
-            for k, v in inputs.items():
-                if str(v).startswith('task.'):
-                    split = str(v).split('.')
-                    upstream_task = split[1]
-                    _locals[k] = workflow.task(upstream_task, filters=split[2:], snapshot=snapshot).data
-                elif str(v).startswith('var.'):
-                    split = str(v).split('.')
-                    defined_var = split[1]
-                    _locals[k] = eval(str(config.var[defined_var]), globals())
-                else:
-                    _locals[k] = eval(str(v), globals())
-
-        return OrcaTask(task, _locals)
-
-    def run_task(task: Dict, snapshot):
-        r_task = resolve_task(task, snapshot=snapshot)
-        if 'python' in task:
-            execute_python(r_task, config)
-        elif 'bash' in task:
-            execute_bash(r_task)
-        elif 'http' in task:
-            execute_http(r_task)
-        elif 'csip' in task:
-            execute_csip(r_task)
-        workflow.write(r_task.name, r_task.locals, meta=r_task.task_data, overwrite=True)
-        if ledger:
-            ledger.add(r_task)
+                __run_task__(task, _config, _cache, snapshot, _ledger, run_globals)
 
     validator(config)
-    cache = store('orca')
-    workflow = cache.workflow(config.name)
-    execute_job(config.job)
-
-
+    workflow = store('orca').workflow(config.name)
+    execute_job(config.job, config, workflow, ledger)

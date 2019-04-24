@@ -105,8 +105,16 @@ def execute(ledger_json, ledger_mongo, ledger_kafka, file, args):
     Run an orca workflow.
     """
     try:
+        ledger = None
+        if ledger_json:
+            ledger = JSONFileLedger(ledger_json)
+        elif ledger_mongo:
+            ledger = MongoLedger(ledger_mongo)
+        elif ledger_kafka:
+            ledger = KafkaLedger(ledger_kafka)
+
         config = OrcaConfig.create(file, args)
-        engine.execute(config)
+        engine.start(config, ledger=ledger)
     except OrcaError as e:
         log.error(e)
 
@@ -114,7 +122,7 @@ def execute(ledger_json, ledger_mongo, ledger_kafka, file, args):
 @orca.command()
 @click.argument('file', type=click.File('r'))
 @click.argument('args', nargs=-1)
-def validate(file, args):
+def check(file, args):
     """
     Validate an orca workflow.
     """

@@ -6,6 +6,7 @@ class OrcaTask(object):
 
     def __init__(self, task_dict: Dict, task_locals: Dict):
         self.task_data = task_dict
+        self.id = id(task_dict)
         self._status = 'unknown'
         self._task_locals = task_locals
 

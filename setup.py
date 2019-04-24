@@ -15,7 +15,8 @@ setuptools.setup(
         "ruamel.yaml == 0.15.88",
         "pymongo == 3.7.2",
         "requests == 2.21.0",
-        "pykafka == 2.8.0" 
+        "pykafka == 2.8.0",
+        "pandas == 0.24.2"
     ],
     description="A cli tool for orchestrating model workflows",
     long_description=open('README.md').read(),
