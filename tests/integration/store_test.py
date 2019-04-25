@@ -1,4 +1,4 @@
-import orca
+import orca.store as orca
 
 
 def test_store():
