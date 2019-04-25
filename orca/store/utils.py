@@ -3,6 +3,8 @@ from pathlib import Path
 import os
 from orca.store.config import DEFAULT_ORCA_PATH
 import json
+import gzip
+from dateutil import parser
 from datetime import datetime
 
 
@@ -14,18 +16,47 @@ def build_path(*args):
     return Path(os.path.join(*args))
 
 
+class OrcaJsonEncoder(json.JSONEncoder):
+    DATE_FORMAT = "%Y-%m-%d"
+    TIME_FORMAT = "%H:%M:%S"
+
+    def default(self, o):
+        if isinstance(o, datetime):
+            return {
+                '_type': "datetime",
+                "value": o.strftime("%s %s" % (self.DATE_FORMAT, self.TIME_FORMAT))
+            }
+
+        return super(OrcaJsonEncoder, self).default(o)
+
+
+class OrcaJsonDecoder(json.JSONDecoder):
+    def __init__(self, *args, **kwargs):
+        json.JSONDecoder.__init__(self, object_hook=self.object_hook, *args, **kwargs)
+
+    def object_hook(self, obj):
+        if '_type' not in obj:
+            return obj
+        _type = obj['_type']
+        if _type == 'datetime':
+            return parser.parse(obj['value'])
+
 def __write_json__(file_path: Path, data={}):
-    with file_path.open('w') as f:
-        json.dump(data, f, default=converter)
+    json_str = json.dumps(data, cls=OrcaJsonEncoder)
+    json_bytes = json_str.encode('utf-8')
+    with gzip.GzipFile(file_path, 'wb') as f:
+        f.write(json_bytes)
 
 
 def __read_json__(file_path: Path):
-    with file_path.open('r') as f:
-        return json.loads(f.read(), encoding='utf-8')
+    with gzip.GzipFile(file_path, 'rb') as f:
+        json_bytes = f.read()
+    json_str = json_bytes.decode('utf-8')
+    return json.loads(json_str, cls=OrcaJsonDecoder)
 
 
 def read_data(path, filters=None):
-    data = __read_json__(build_path(path, 'data.json'))
+    data = __read_json__(build_path(path, 'data.json.gz'))
     if filters:
         tmp = data
         for f in filters:
@@ -39,7 +70,7 @@ def read_data(path, filters=None):
 
 
 def write_data(path, data):
-    data_file = build_path(path, 'data.json')
+    data_file = build_path(path, 'data.json.gz')
     __write_json__(data_file, data)
 
 
@@ -47,16 +78,18 @@ def converter(o):
     if isinstance(o, datetime):
         return o.__str__()
 
+
 def read_metadata(path):
     """ use this to construct paths for future storage support """
-    return __read_json__(build_path(path, 'metadata.json'))
+    return __read_json__(build_path(path, 'metadata.json.gz'))
 
 
 def write_metadata(path, metadata={}):
     """ use this to construct paths for future storage support """
     now = datetime.now()
     metadata['_updated'] = now.strftime('%Y-%m-%d %H:%I:%S.%f')
-    meta_file = build_path(path, 'metadata.json')
+    metadata['_id'] = id(metadata)
+    meta_file = build_path(path, 'metadata.json.gz')
     __write_json__(meta_file, metadata)
 
 

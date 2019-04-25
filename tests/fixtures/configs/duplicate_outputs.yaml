@@ -7,7 +7,7 @@ var:
 
 job:
   # bash inline task
-  - task: test basic task
+  - task: test_basic_task
     python: b = a*a
     inputs:
       a: var.value

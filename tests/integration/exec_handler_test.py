@@ -78,5 +78,9 @@ def test_bad_python_func(config):
         engine.start(config('bad_python_func.yaml'))
 
 
+def test_cache(config):
+    engine.start(config('cache_tests.yaml'))
+
+
 if __name__ == '__main__':
     unittest.main()

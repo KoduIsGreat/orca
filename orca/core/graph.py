@@ -6,11 +6,12 @@ class Node(object):
     def __repr__(self):
         return "orca.core.graph.Node<{0}, {1}>".format(self.name, self.connections)
 
-    def __init__(self, name, connections, task=None, came_from=None, is_root=True):
+    def __init__(self, name, connections, annotation=None, task=None, came_from=None, is_root=True):
         self.name = name
         self.connections = connections
         self.came_from = came_from
         self.task = task
+        self.annotation = annotation
         self.is_root = is_root
 
 
@@ -27,7 +28,6 @@ class Graph(object):
             current_node = self.roots[0]  # defaults to first root if current node is not provided
         if current_node.name in visited_nodes:
             return
-
         visited_nodes[current_node.name] = True
         for conn in current_node.connections:
             fp.write("\t{0} -> {1}\n".format(current_node.name, conn.name))

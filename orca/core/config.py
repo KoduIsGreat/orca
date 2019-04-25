@@ -93,6 +93,7 @@ class OrcaConfig(object):
         self.job = config.get('job')
         self.version = config.get('version', '0.0')
         self.name = config.get('name', file)
+        self.cache = None
 
         self.__set_vars({} if self.var is None else self.var,)
 

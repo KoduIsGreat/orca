@@ -1,5 +1,4 @@
 from orca.store import utils
-from pandas.io.json import json_normalize
 
 
 class Task(object):
@@ -29,5 +28,3 @@ class Task(object):
         self.metadata = utils.read_metadata(self._path)
         self.data = utils.read_data(self._path, filters=filters)
 
-    def to_pandas(self, metadata_path, records_path):
-        return json_normalize(self.data, record_path=records_path, meta=metadata_path)

@@ -1,0 +1,35 @@
+apiVersion: '1.0'
+
+version: '0.1'
+name: cache tests
+var:
+  value: 5
+
+job:
+
+  - task: setup
+    python: |
+      a = 26
+      b = 30
+      c = 50
+    outputs:
+      - a
+      - b
+      - c
+
+  - task: square
+    python: |
+      d = a * a
+    inputs:
+      a: task.setup.a
+    outputs:
+      - d
+
+  - task: divide
+    python: |
+      e = d / c
+    inputs:
+      d: task.square.d
+      c: task.setup.c
+    outputs:
+      - e

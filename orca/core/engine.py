@@ -13,9 +13,7 @@ import requests
 import subprocess as subp
 from csip import Client
 import json
-from orca.store.store import store
-from orca.store.workflow import Workflow
-
+from orca.core import cache
 log = logging.getLogger(__name__)
 
 
@@ -161,7 +159,7 @@ def execute_bash(_task: OrcaTask) -> Dict:
     return {}
 
 
-def __resolve_task__(task: Dict, config: OrcaConfig, cache: Workflow, snapshot=None, run_globals={}) -> OrcaTask:
+def __resolve_task__(task: Dict, config: OrcaConfig, snapshot=None, run_globals={}) -> OrcaTask:
     inputs = task.get('inputs', {})
     _locals = {}
     if inputs:
@@ -170,7 +168,7 @@ def __resolve_task__(task: Dict, config: OrcaConfig, cache: Workflow, snapshot=N
             if str(v).startswith('task.'):
                 split = str(v).split('.')
                 upstream_task = split[1]
-                _locals[k] = cache.task(upstream_task, filters=split[2:], snapshot=snapshot).data
+                _locals[k] = config.cache.fetch(upstream_task, filters=split[2:], snapshot=snapshot)
             elif str(v).startswith('var.'):
                 split = str(v).split('.')
                 defined_var = split[1]
@@ -181,9 +179,9 @@ def __resolve_task__(task: Dict, config: OrcaConfig, cache: Workflow, snapshot=N
     return OrcaTask(task, _locals)
 
 
-def __run_task__(task: Dict, config: OrcaConfig, workflow: Workflow, snapshot=None, ledger: Ledger = None,
+def __run_task__(task: Dict, config: OrcaConfig, snapshot=None, ledger: Ledger = None,
                  run_globals={}):
-    r_task = __resolve_task__(task, config, workflow, snapshot=snapshot, run_globals=run_globals)
+    r_task = __resolve_task__(task, config, snapshot=snapshot, run_globals=run_globals)
     if 'python' in task:
         execute_python(r_task, config)
     elif 'bash' in task:
@@ -192,7 +190,8 @@ def __run_task__(task: Dict, config: OrcaConfig, workflow: Workflow, snapshot=No
         execute_http(r_task)
     elif 'csip' in task:
         execute_csip(r_task)
-    workflow.write(r_task.name, r_task.locals, meta=r_task.task_data, overwrite=True)
+    if config.cache is not None:
+        config.cache.store(r_task)
     if ledger:
         ledger.add(r_task)
 
@@ -208,7 +207,7 @@ def start(config: OrcaConfig, validator=validate, ledger: Ledger = None):
     :return:
     """
 
-    def execute_job(job: List[Dict], _config: OrcaConfig, _cache: Workflow, _ledger: Ledger, snapshot=None):
+    def execute_job(job: List[Dict], _config: OrcaConfig, _ledger: Ledger, snapshot=None, start_at=None):
         run_globals = {}  # scoped variables per "job"
         task_queue = walk(job, run_globals=run_globals)
         concurrent_jobs = []
@@ -221,10 +220,10 @@ def start(config: OrcaConfig, validator=validate, ledger: Ledger = None):
                     for job in concurrent_jobs:
                         executor.submit(execute_job, job)
                 concurrent_jobs.clear()
-                __run_task__(task, _config, _cache, snapshot, _ledger, run_globals)
+                __run_task__(task, _config, snapshot, _ledger, run_globals)
             else:
-                __run_task__(task, _config, _cache, snapshot, _ledger, run_globals)
+                __run_task__(task, _config, snapshot, _ledger, run_globals)
 
     validator(config)
-    workflow = store('orca').workflow(config.name)
-    execute_job(config.job, config, workflow, ledger)
+    config = cache.connect(config, 'development')
+    execute_job(config.job, config, ledger)

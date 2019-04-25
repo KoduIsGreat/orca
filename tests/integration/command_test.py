@@ -14,14 +14,14 @@ class OrcaCommandTest(unittest.TestCase):
         runner = CliRunner()
         runner.invoke(commands.version)
 
-    def test_execute(self):
-        runner = CliRunner()
-        runner.invoke(commands.execute, [get_config_path('simple_example.yaml')])
-
     def test_todot(self):
         runner = CliRunner()
-        runner.invoke(commands.todot, [get_config_path('http_python_csip.yaml')])
+        runner.invoke(commands.egraph, [get_config_path('http_python_csip.yaml')])
 
     def test_todot_leafs(self):
         runner = CliRunner()
-        runner.invoke(commands.todot, [get_config_path('dot_test.yaml')])
+        runner.invoke(commands.egraph, [get_config_path('dot_test.yaml')])
+
+    def test_todot_leafs(self):
+        runner = CliRunner()
+        runner.invoke(commands.dgraph, [get_config_path('dot_test.yaml')])

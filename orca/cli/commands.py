@@ -1,13 +1,13 @@
 import orca as o  # must be renamed
 from orca.core.config import OrcaConfig, log
 from orca.core import graph
-from orca.core.handler import ExecutionHandler
-from orca.core.handler import ValidationHandler
+from orca.core.handler import DotfileHandler
 from orca.core.ledger import JSONFileLedger
 from orca.core.ledger import MongoLedger
 from orca.core.ledger import KafkaLedger
 from orca.core.errors import OrcaError
 from orca.core import engine
+from orca.core.validation import validate
 import click
 import click_log
 
@@ -79,41 +79,6 @@ def run(ledger_json, ledger_mongo, ledger_kafka, file, args):
             ledger = KafkaLedger(ledger_kafka)
 
         config = OrcaConfig.create(file, args)
-        executor = ExecutionHandler(ledger)
-        executor.handle(config)
-    except OrcaError as e:
-        log.error(e)
-
-
-# run a workflow:
-# python3 orca run --ledger-json /tmp/f.json for.yaml
-# python3 orca run --ledger-mongo localhost/orcadb1/ledgercol for.yaml
-#
-# maybe import file into a db:
-# mongoimport --db orca --collection ledger --file /tmp/f.json
-
-@orca.command()
-@click.option('--ledger-json', type=click.Path(), help='file ledger.')
-@click.option('--ledger-mongo', type=str,
-              help='mongodb ledger, TEXT format "<host[:port]>/<db>/<col>".', callback=check_format)
-@click.option('--ledger-kafka', type=str,
-              help='kafka ledger, TEXT format "<host[:port]>/topic".', callback=check_format_kafka)
-@click.argument('file', type=click.File('r'))
-@click.argument('args', nargs=-1)
-def execute(ledger_json, ledger_mongo, ledger_kafka, file, args):
-    """
-    Run an orca workflow.
-    """
-    try:
-        ledger = None
-        if ledger_json:
-            ledger = JSONFileLedger(ledger_json)
-        elif ledger_mongo:
-            ledger = MongoLedger(ledger_mongo)
-        elif ledger_kafka:
-            ledger = KafkaLedger(ledger_kafka)
-
-        config = OrcaConfig.create(file, args)
         engine.start(config, ledger=ledger)
     except OrcaError as e:
         log.error(e)
@@ -128,8 +93,7 @@ def check(file, args):
     """
     try:
         config = OrcaConfig.create(file, args)
-        validator = ValidationHandler()
-        validator.handle(config)
+        validate(config)
     except OrcaError as e:
         log.error(e)
 
@@ -144,10 +108,30 @@ def check(file, args):
 @orca.command()
 @click.argument('file', type=click.File('r'))
 @click.argument('args', nargs=-1)
-def todot(file, args):
+def egraph(file, args):
     """
-    Create a graphviz dot file from an orca workflow.
+    Create a execution graph from an orca workflow using graphviz
+    For more info on graphviz: https://www.graphviz.org/
+    Usage: $ orca egraph example.yaml | dot -Tpng -o example.png
     """
+    try:
+        config = OrcaConfig.create(file, args)
+        dotfile = DotfileHandler()
+        dotfile.handle(config)
+    except Exception as e:
+        print(e)
+        log.error(e)
+        raise
+
+@orca.command()
+@click.argument('file', type=click.File('r'))
+@click.argument('args', nargs=-1)
+def dgraph(file, args):
+    """
+       Create a dependency graph of the orca workflow using graphviz
+       For more info on graphviz: https://www.graphviz.org/
+       Usage: $ orca dgraph example.yaml | dot -Tpng -o example.png
+       """
     try:
         config = OrcaConfig.create(file, args)
         file_name = file.name.replace('.yaml', '.dot')

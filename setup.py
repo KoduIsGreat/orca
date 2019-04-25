@@ -1,5 +1,5 @@
-import setuptools
 import orca
+import setuptools
 
 setuptools.setup(
     name=orca.name,
