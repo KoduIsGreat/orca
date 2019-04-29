@@ -188,8 +188,12 @@ Options:
   --ledger-kafka TEXT  kafka ledger, TEXT format "<host[:port]>/topic".
   --help               Show this message and exit.
 ```
-## todot
-Converts the yaml definition into a graphviz dotfile
+## egraph
+prints an execution graph of the workflow using graphviz
+
+## dgraph
+prints a dependency graph of the workflow using graphviz
+
 ## version
 Prints the current orca version
 ```bash

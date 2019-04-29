@@ -17,7 +17,7 @@ class Task(object):
         if snapshot:
             snap_path = utils.build_path(datastore, workflow, '_snapshots', snapshot)
 
-            self._path = utils.build_path(snapshot, task)
+            self._path = utils.build_path(snap_path, task)
 
             if not utils.path_exists(snap_path):
                 raise ValueError("Snapshot %s doesn't exist" % snapshot)
