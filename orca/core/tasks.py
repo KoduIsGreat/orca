@@ -2,10 +2,15 @@ from typing import Dict, List
 from orca.core.errors import ConfigurationError
 
 
+# TODO clean this up.
+# TODO use hash _id to check to see if task should be ran again.
+# TODO create a "State" task map indcating the completion status of tasks, will be needed for implicit parallelization
+
 class OrcaTask(object):
 
     def __init__(self, task_dict: Dict, task_locals: Dict):
         self.task_data = task_dict
+        self.id = id(task_dict)
         self._status = 'unknown'
         self._task_locals = task_locals
 

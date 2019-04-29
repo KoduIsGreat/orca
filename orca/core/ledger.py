@@ -11,6 +11,8 @@ from datetime import datetime
 from pykafka import KafkaClient
 from dotted.collection import DottedCollection
 
+# TODO update ledgers to somehow use url references to data?
+
 
 class Ledger(object):
     """Keeps A record of workflow task executions transactions"""
@@ -40,7 +42,7 @@ class Ledger(object):
 
         d = {
             # the workflow file
-            'orca_file': os.path.abspath(self.config.get_yaml_file()),
+            'orca_file': os.path.abspath(self.config.yaml_file()),
             # the 'version' entry in the workflow file
             'orca_id': self.config.get_version(),
             # the 'version' entry in the workflow file (e.g. gitattribute)
@@ -49,7 +51,7 @@ class Ledger(object):
             'task_uuid': str(self._id),  # the uuid of the current run
             'task_status': task.status,  # status of the run
             'task_time': str(datetime.now()),  # task execution time
-            'task_data': to_serializable(task.locals),  # task data
+            'task_data': task.locals,  # task data
         }
         if log.isEnabledFor(logging.DEBUG):
             log.debug('ledger: {0}'.format(d))

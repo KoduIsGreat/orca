@@ -1,0 +1,49 @@
+apiVersion: '1.0'
+
+version: '0.1'
+name: 'fork example'
+
+job:
+  - fork:
+    - - task: task_1
+        python: a = 50
+        outputs:
+          - a
+      - task: task_2
+        python: b = 2 * a
+        inputs:
+          a: task.task_1.a
+        outputs:
+          - b
+      - task: task_3
+        python: c = b % a
+        inputs:
+          a: task.task_1.a
+          b: task.task_2.b
+        outputs:
+          - c
+
+    - - task: task_4
+        python: a = 30
+        outputs:
+          - a
+      - task: task_5
+        python: b = 2 * a
+        inputs:
+          a: task.task_4.a
+        outputs:
+          - b
+      - task: task_6
+        python: c = b % a
+        inputs:
+          a: task.task_4.a
+          b: task.task_5.b
+        outputs:
+          - c
+  - task: final
+    python: out = seq1 + seq2
+    inputs:
+      seq1: task.task_3.c
+      seq2: task.task_6.c
+    outputs:
+      - out

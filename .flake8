@@ -2,4 +2,4 @@
 ignore = E226,E302,E41,F841,F811,W605,W291,W293,W391,E265,W504
 max-line-length = 120
 exclude = tests/fixtures/*
-max-complexity = 20
+max-complexity = 50

@@ -1,14 +1,13 @@
-
-import orca as o   # must be renamed
+import orca as o  # must be renamed
 from orca.core.config import OrcaConfig, log
-from orca.core.handler import ExecutionHandler
-from orca.core.handler import ValidationHandler
+from orca.core import graph
 from orca.core.handler import DotfileHandler
 from orca.core.ledger import JSONFileLedger
 from orca.core.ledger import MongoLedger
 from orca.core.ledger import KafkaLedger
 from orca.core.errors import OrcaError
-
+from orca.core import engine
+from orca.core.validation import validate
 import click
 import click_log
 
@@ -38,6 +37,7 @@ def check_format(ctx, param, value):
             "Invalid mongo connect string, expected '<host[:port]>/<db>/<col>'")
         ctx.exit()
     return c
+
 
 def check_format_kafka(ctx, param, value):
     if value is None:
@@ -79,8 +79,7 @@ def run(ledger_json, ledger_mongo, ledger_kafka, file, args):
             ledger = KafkaLedger(ledger_kafka)
 
         config = OrcaConfig.create(file, args)
-        executor = ExecutionHandler(ledger)
-        executor.handle(config)
+        engine.start(config, ledger=ledger)
     except OrcaError as e:
         log.error(e)
 
@@ -88,14 +87,13 @@ def run(ledger_json, ledger_mongo, ledger_kafka, file, args):
 @orca.command()
 @click.argument('file', type=click.File('r'))
 @click.argument('args', nargs=-1)
-def validate(file, args):
+def check(file, args):
     """
     Validate an orca workflow.
     """
     try:
         config = OrcaConfig.create(file, args)
-        validator = ValidationHandler()
-        validator.handle(config)
+        validate(config)
     except OrcaError as e:
         log.error(e)
 
@@ -110,13 +108,42 @@ def validate(file, args):
 @orca.command()
 @click.argument('file', type=click.File('r'))
 @click.argument('args', nargs=-1)
-def todot(file, args):
+def egraph(file, args):
     """
-    Create a graphviz dot file from an orca workflow.
+    Create a execution graph from an orca workflow using graphviz
+    For more info on graphviz: https://www.graphviz.org/
+    Usage: $ orca egraph example.yaml | dot -Tpng -o example.png
     """
     try:
         config = OrcaConfig.create(file, args)
-        printer = DotfileHandler()
-        printer.handle(config)
-    except OrcaError as e:
+        dotfile = DotfileHandler()
+        dotfile.handle(config)
+    except Exception as e:
+        print(e)
         log.error(e)
+        raise
+
+@orca.command()
+@click.argument('file', type=click.File('r'))
+@click.argument('args', nargs=-1)
+def dgraph(file, args):
+    """
+       Create a dependency graph of the orca workflow using graphviz
+       For more info on graphviz: https://www.graphviz.org/
+       Usage: $ orca dgraph example.yaml | dot -Tpng -o example.png
+       """
+    try:
+        config = OrcaConfig.create(file, args)
+        file_name = file.name.replace('.yaml', '.dot')
+        with open(file_name, 'w') as f:
+            n = str(config.name).replace(' ', '_').replace('\'', '')
+            f.write(" digraph " + n + " {\n")
+            g = graph.loads(config)
+            visited = {}
+            for root in g.roots:
+                g.to_dot(f, visited_nodes=visited, current_node=root)
+            f.write("}\n")
+    except Exception as e:
+        print(e)
+        log.error(e)
+        raise

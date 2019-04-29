@@ -243,3 +243,72 @@ job:
 In this example we introduced a config object that specifies which function to call, and maps the inputs defined on the task
 to the inputs defined in the callable function. Additionally we specified a name for the return value, this name can be 
 any valid identifier. If the function returns nothing then returns is not required
+
+# Http & Csip Tasks
+Both the Http and Csip tasks are used for making http calls. Csip tasks are used for calling csip endpoints to
+handle their special payload structures. 
+
+
+Http tasks can be used for making any HTTP request. Currently there is no task distinction between http or https, 
+this may change in the future.
+```yaml
+    task: get_area_data
+    http: https://demo.waterforecast.rtiamanzi.org/api/v1/areas/data
+    inputs:
+      time: '2019-04-03T10:00:00Z'
+    outputs:
+      - json
+```
+By default, the HTTP method of the task is assumed to be `GET`,
+`inputs` defined on HTTP tasks using a `GET` method will be treated as query parameters.
+i.e the above task will resolve to the following url:
+`https://demo.waterforecast.rtiamanzi.org/api/v1/areas/data?time=2019-04-03T10:00:00Z`
+To configure a different HTTP method see blow.
+The methods that are supported are:
+
+* GET
+* PUT
+* POST
+* DELETE
+
+```yaml
+    task: post_raw_data
+    http: https://demo.waterforecast.rtiamanzi.org/api/v1/rawforecasts
+    config:
+      method: 'POST'
+    inputs:
+      data: task.upstream.mydata
+```
+The HTTP headers are also configurable via the `config` property on the task
+
+```yaml
+    task: post_raw_data
+    http: https://demo.waterforecast.rti.amanzi.org/api/v1/rawforecasts
+    config:
+      method: 'POST'
+      headers:
+        MyCustomHeader: "my value"
+        Authorization: 'Bearer ((access_token))'
+```
+
+Http tasks support json API's (shown above) as well as `text/plain` / `html` media types. The result of a http task 
+is nested under either a `json` property if the response media type was `application/json` otherwise its nested
+under `html`.
+
+
+Csip tasks perform the same function as HTTP tasks but makes dealing with the specifics of csip services much easier.
+Every call to a CSIP task is considered a `POST`.
+
+```yaml
+    task: normalize
+    csip: http://ehs-csip-norm.eastus.azurecontainer.io:8080/csip.normalize/d/tslist/1.0
+    inputs:
+      timeSeries: task.sometask.timeseries
+      operation: 'zscore'
+    outputs:
+      - data
+```
+
+Inputs into the csip task are mapped appropriately to the  json array of `parameters` that csip requires.
+
+

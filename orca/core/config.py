@@ -10,9 +10,46 @@ from orca.schema.validation import validate
 from orca.core.errors import ConfigurationError
 log = logging.getLogger(__name__)
 
+# TODO refactor so task and var are no longer needed.
+# TODO remove __set_vars and evals
+
 # all payload data during processing. must be global!
 task = DottedDict()
 var = DottedDict()
+
+
+def resolve_file_path(config: 'OrcaConfig', name: str, ext: str) -> str:
+    """ resolve the full qualified path name"""
+
+    def _resolve_file_path(config: OrcaConfig, _name: str) -> str:
+        """ resolve the full qualified path name"""
+        if os.path.isfile(_name):
+            return _name
+        # otherwise find the relative dir
+        yaml_dir = config.yaml_dir
+        rel_path = os.path.join(yaml_dir, _name)
+        if os.path.isfile(rel_path):
+            # path relative to yaml file
+            return rel_path
+        else:
+            # this should be a file but it's not.
+            raise ConfigurationError(
+                'File not found: "{0}"'.format(_name))
+
+    # check to see if the value ends with an extension
+    if name.endswith(ext):
+        # check if its an absolute path
+        return _resolve_file_path(config, name)
+    # check if its a variable
+    elif name.startswith('var.'):
+        try:
+            name = eval(str(name), globals())
+        except Exception as e:
+            # ok, never mind
+            log.debug(e)
+        if not name:
+            return name
+        return _resolve_file_path(config, name)
 
 
 class OrcaConfig(object):
@@ -41,7 +78,6 @@ class OrcaConfig(object):
             raise ConfigurationError("error loading yaml file.", e)
         except ConfigurationError as e:
             # lets capture it log it and reraise it.
-            log.error(e)
             raise e
 
     @staticmethod
@@ -54,19 +90,22 @@ class OrcaConfig(object):
 
         self.file = file
         self.api_version = config.get('apiVersion')
+        self.sym_table = {}
         self.conf = config.get('conf', {})
         self.var = config.get('var', {})
         self.job = config.get('job')
         self.version = config.get('version', '0.0')
         self.name = config.get('name', file)
+        self.cache = None
 
-        self.__set_vars({} if self.var is None else self.var,
-                        args if args is not None else [])
+        self.__set_vars({} if self.var is None else self.var,)
 
-    def get_yaml_dir(self) -> str:
+    @property
+    def yaml_dir(self) -> str:
         return os.path.dirname(self.file) if self.file is not None else "."
 
-    def get_yaml_file(self) -> str:
+    @property
+    def yaml_file(self) -> str:
         return self.file
 
     def get_version(self) -> str:
@@ -75,7 +114,7 @@ class OrcaConfig(object):
     def get_name(self) -> str:
         return self.name
 
-    def __set_vars(self, variables: Dict, args: List[str]) -> None:
+    def __set_vars(self, variables: Dict) -> None:
         """put all variables as globals"""
         log.debug("setting job variables:")
         for key, val in variables.items():

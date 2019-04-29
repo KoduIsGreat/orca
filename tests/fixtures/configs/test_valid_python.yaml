@@ -1,0 +1,7 @@
+apiVersion: '1.0'
+name: 'python test'
+version: '0.1'
+job:
+  - task: python_test
+    python: doesnotexist.py
+

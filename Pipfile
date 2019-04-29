@@ -13,14 +13,15 @@ dotted = "==0.1.8"
 pymongo = "==3.7.2"
 pykafka = "==2.8.0"
 "ruamel.yaml" = "==0.15.88"
+pandas = "==0.24.2"
 
 [dev-packages]
 setuptools = "*"
 wheel = "*"
 flake8 = "*"
-pytest = "*"
 mkdocs = "*"
 "bump2version" = "*"
+pytest = "*"
 
 [requires]
-python_version = "3.6"
+python_version = "3.7"

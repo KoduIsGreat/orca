@@ -1,0 +1,7 @@
+apiVersion: '1.0'
+name: 'bash test'
+version: '0.1'
+job:
+  - task: bash_test
+    bash: doesnotexist.sh
+
