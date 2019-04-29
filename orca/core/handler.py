@@ -16,39 +16,44 @@ from itertools import chain
 from orca.core.config import var  # noqa: F401
 
 
+# TODO move "walk" into a more appropriate file, maybe config?
+# TODO update walk to annotate tasks with their potential conditional (if, switch, for)
+# TODO remove deprecated code, update dotfile handling to use graph
+
 def walk(job: List, run_globals={}, visit_all_tasks: bool = False):
     """ Generator function that walks the job hierarchy
         each iteration of the generator returns a dictionary containing the task definition.
         In the case of fork clauses, each iteration returns a list of tasks to be executed in parallel.
     """
+
     # control structures
     def empty():
         yield from ()
 
-    def _handle_if(condition_block: Dict, visit_children: bool = False) -> Generator:
+    def _handle_if(condition_block: Dict, run_globals={}, visit_children: bool = False) -> Generator:
         """Handle 'if'"""
         cond = condition_block['if']
         sequence = condition_block['do']
         if eval(cond, globals(), run_globals) or visit_children:
-            return walk(sequence, visit_children)
+            return walk(sequence, run_globals, visit_children)
         return empty()
 
-    def _handle_switch(condition_block: Dict, visit_children: bool = False) -> Generator:
+    def _handle_switch(condition_block: Dict, run_globals, visit_children: bool = False) -> Generator:
         """Handle 'switch'"""
-        cond = condition_block['switch']
-        case = eval(cond, globals(), run_globals)
-        seq = condition_block.get(case, condition_block.get('default', None))
         if visit_children:
             # gather all tasks from all conditions
             return chain.from_iterable([
                 walk(condition_block[k], run_globals, visit_all_tasks) for k in condition_block.keys() if k != 'switch']
             )
-        elif seq is not None:
-            return walk(seq)
+        cond = condition_block['switch']
+        case = eval(cond, globals(), run_globals)
+        seq = condition_block.get(case, condition_block.get('default', None))
+        if seq is not None:
+            return walk(seq, run_globals, visit_children)
         else:
             return empty()
 
-    def _handle_for(condition_block: Dict, visit_children: bool) -> Generator:
+    def _handle_for(condition_block: Dict, run_globals, visit_children: bool) -> Generator:
         """Handle 'for'"""
         var_expr = condition_block['for']
         i = var_expr.find(",")
@@ -60,8 +65,6 @@ def walk(job: List, run_globals={}, visit_all_tasks: bool = False):
         if not var.isidentifier():
             raise ConfigurationError(
                 'Not a valid identifier: "{0}"'.format(var))
-        if visit_children:
-            return walk(condition_block['do'], visit_children)
 
         expr = var_expr[i + 1:]
         for i in eval(expr, globals(), run_globals):
@@ -71,17 +74,20 @@ def walk(job: List, run_globals={}, visit_all_tasks: bool = False):
                 q = "'"
             s = "{0}={2}{1}{2}".format(var, i, q)
             exec(s, globals(), run_globals)
-            return walk(condition_block['do'])
+            yield walk(condition_block['do'], run_globals, visit_children)
+            if visit_children:
+                # Only one iteration if we wanna visit all the childrens
+                break
 
-    def _handle_fork(jobs: Dict, visit_children: bool = False) -> List[List[OrcaTask]]:
+    def _handle_fork(jobs: Dict, run_globals, visit_children: bool = False) -> List[List[OrcaTask]]:
         """Handle 'fork'"""
 
-        def get_tasks(j: List[OrcaTask]) -> List[OrcaTask]:
+        def get_tasks(j: List[OrcaTask], run_globals, visit_children) -> List[OrcaTask]:
             return [_t for _t in walk(j, run_globals, visit_children)]
 
         tasks = []
         for _job in jobs:
-            tasks.append(get_tasks(_job))
+            tasks.append(get_tasks(_job, run_globals, visit_children))
         return tasks
 
     for step in job:
@@ -91,19 +97,24 @@ def walk(job: List, run_globals={}, visit_all_tasks: bool = False):
             yield step
         elif node == "if":
             log.debug(" ---- if: '{}'".format(step['if']))
-            for t in _handle_if(step, visit_all_tasks):
+            for t in _handle_if(step, run_globals, visit_all_tasks):
                 yield t
         elif node == "for":
             log.debug(" ---- for: '{}'".format(step['for']))
-            for t in _handle_for(step, visit_all_tasks):
-                yield t
+            g = _handle_for(step, run_globals, visit_all_tasks)
+            for t in g:
+                if isinstance(t, Generator):
+                    for x in t:
+                        yield x
+                else:
+                    yield t
         elif node.startswith("fork"):
             log.debug(" ---- fork: ")
-            for tl in _handle_fork(step['fork'], visit_all_tasks):
+            for tl in _handle_fork(step['fork'], run_globals, visit_all_tasks):
                 yield tl
         elif node == "switch":
             log.debug(" ---- switch: '{}'".format(step['switch']))
-            for t in _handle_switch(step, visit_all_tasks):
+            for t in _handle_switch(step, run_globals, visit_all_tasks):
                 yield t
         else:
             raise ConfigurationError(
@@ -316,6 +327,7 @@ class OrcaHandler(metaclass=ABCMeta):
 
 #############################################
 
+
 class ExecutionHandler(OrcaHandler):
     """Execution Handler, executes csip, bash, python,_handle_if http"""
 
@@ -482,6 +494,7 @@ class ExecutionHandler(OrcaHandler):
 
 #############################################
 
+
 class ValidationHandler(OrcaHandler):
     """ValidationHandler, no execution"""
 
@@ -521,6 +534,7 @@ class ValidationHandler(OrcaHandler):
 
 #############################################
 
+
 class NoneHandler(OrcaHandler):
     """Handler that does not do anything, useful for testing"""
 
@@ -541,6 +555,7 @@ class NoneHandler(OrcaHandler):
 
 
 #############################################
+
 
 class DotfileHandler(OrcaHandler):
     """Handles printing of a dot file"""

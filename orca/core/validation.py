@@ -89,6 +89,7 @@ def validate_task(config: OrcaConfig, task):
 
 
 def validate(config: OrcaConfig):
+    log.debug('checking orca config {0}'.format(config.yaml_file))
     check_variables(config)
     for task in walk(job=config.job, visit_all_tasks=True):
         if isinstance(task, list):

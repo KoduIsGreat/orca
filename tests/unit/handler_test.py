@@ -66,16 +66,7 @@ class OrcaHandlerTest(unittest.TestCase):
             count += 1
             assert task is not None
             assert 'task' in task
-        assert count == 5
-
-    def test_walk_job_switch_false(self):
-        config = get_config('switch.yaml')
-        count = 0
-        for task in walk(config.job, visit_all_tasks=False):
-            count += 1
-            assert task is not None
-            assert 'task' in task
-        assert count == 2
+        assert count == 6
 
     def test_walk_job_fork(self):
         config = get_config('par.yaml')

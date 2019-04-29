@@ -7,6 +7,7 @@ from orca.core.handler import walk
 from orca.core.errors import ExecutionError
 from orca.core.validation import validate
 from concurrent.futures.thread import ThreadPoolExecutor
+from concurrent.futures import wait
 import logging
 import re
 import requests
@@ -217,13 +218,19 @@ def start(config: OrcaConfig, validator=validate, ledger: Ledger = None):
                 concurrent_jobs.append(task)
             elif len(concurrent_jobs) > 0:
                 with ThreadPoolExecutor(max_workers=len(concurrent_jobs)) as executor:
-                    for job in concurrent_jobs:
-                        executor.submit(execute_job, job)
+                    futures = [executor.submit(execute_job, job, _config, _ledger, snapshot) for job in concurrent_jobs]
+                wait(futures)
                 concurrent_jobs.clear()
                 __run_task__(task, _config, snapshot, _ledger, run_globals)
             else:
                 __run_task__(task, _config, snapshot, _ledger, run_globals)
 
+    log.info('checking workflow...')
     validator(config)
+    log.info('workflow is valid.')
+    log.info('connecting to cache')
     config = cache.connect(config, 'development')
+    log.info('successfully connected to cache')
+    log.info('starting workflow engine...')
     execute_job(config.job, config, ledger)
+    log.info('orca workflow complete!')

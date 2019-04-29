@@ -10,6 +10,9 @@ from orca.schema.validation import validate
 from orca.core.errors import ConfigurationError
 log = logging.getLogger(__name__)
 
+# TODO refactor so task and var are no longer needed.
+# TODO remove __set_vars and evals
+
 # all payload data during processing. must be global!
 task = DottedDict()
 var = DottedDict()

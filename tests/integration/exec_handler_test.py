@@ -41,8 +41,13 @@ def test_fork_task(config):
 def test_for_task(config):
     engine.start(config('for.yaml'))
 
+
 def test_for_vars(config):
     engine.start(config('for_with_variable.yaml'))
+
+
+def test_fork(config):
+    engine.start(config('test_fork.yaml'))
 
 
 def test_switch_task(config):

@@ -1,28 +1,30 @@
 apiVersion: '1.0'
-name: 'switch test'
+name: 'switch example'
 version: '0.1'
-dependencies:
-  - os
 var:
-  afile: 'a.py'
-  select: 'test5'
-  th: 12
+  select: 'even'
 job:
-  - switch: var.select
-    test5:
-      - task: start
-        python: var.afile
-      - task: start1
-        python: var.afile
-    test1:
-      - task: start1_1
-        python: var.afile
-      - task: start1_2
-        python: var.afile
-    default:
-      - task: default
-        python: var.afile
-
-
-     
-     
+  - for: i, range(0,10)
+    do:
+      - task: generate_cond
+        python: |
+          remainder = counter % 2
+          select = 'even' if remainder == 0 else 'odd'
+        inputs:
+          counter: i
+        outputs:
+          - select
+      - switch: task.generate_cond.select
+        even:
+          - task: even_task_1
+            python: print('hello')
+          - task: even_task_2
+            python: print('This is even!')
+        odd:
+          - task: odd_task_1
+            python: print('hello')
+          - task: odd_task_2
+            python: print('this is odd')
+        default:
+          - task: not_whole
+            python: print('not whole')

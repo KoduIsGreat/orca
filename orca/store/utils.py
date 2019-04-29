@@ -7,6 +7,11 @@ import gzip
 from dateutil import parser
 from datetime import datetime
 
+# TODO break encoders into their own module (relevant for all of orca)?
+# TODO add simplified connect api for connecting a specific tasks data
+# TODO allow azr blob storage or s3 bucket file protocols
+# TODO update to a faster compression e.g. snappy?
+# TODO create an abstractions for "readers" and "writers"? support different types, protobuf, json, sql etc
 
 def get_path(*args):
     return Path(os.path.join(os.getenv('ORCA_CACHE_LOCATION', DEFAULT_ORCA_PATH), *args))

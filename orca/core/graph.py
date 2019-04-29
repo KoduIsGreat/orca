@@ -2,6 +2,9 @@ from orca.core.config import OrcaConfig
 from orca.core.handler import walk
 
 
+# TODO clean up node
+# TODO integrate graph into exec to do implicit parallelization, perhaps use queue + worker pool strategy?
+
 class Node(object):
     def __repr__(self):
         return "orca.core.graph.Node<{0}, {1}>".format(self.name, self.connections)
