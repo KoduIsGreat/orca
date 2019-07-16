@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+#from dataclasses import dataclass
 from typing import Dict
 
 from orca.core.config import OrcaConfig, task
@@ -18,10 +18,14 @@ def connect(config: OrcaConfig, store_name='development') -> OrcaConfig:
     return config
 
 
-@dataclass
 class OrcaCache:
     workflow_file_cache: Workflow
     mem_cache: Dict
+
+    def __init__(self, w: Workflow, mc: Dict):
+        self.workflow_file_cache = w
+        self.mem_cache = mc
+
 
     def fetch(self, task_name, filters=(), snapshot=None):
         if task_name not in self.mem_cache:
