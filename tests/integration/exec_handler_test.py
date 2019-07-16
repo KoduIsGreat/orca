@@ -54,8 +54,8 @@ def test_switch_task(config):
     engine.start(config('switch.yaml'))
 
 
-def test_http_python_csip(config):
-    engine.start(config('http_python_csip.yaml'))
+# def test_http_python_csip(config):
+#     engine.start(config('http_python_csip.yaml'))
 
 
 def test_var1_task(config):
