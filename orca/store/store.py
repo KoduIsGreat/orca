@@ -43,7 +43,7 @@ class store(object):
         self.workflows = self.list_workflows()
         return True
 
-    def workflow(self, workflow, overwrite=False):
+    def workflow(self, workflow, overwrite=True):
         if workflow in self.workflows and not overwrite:
             return Workflow(workflow, self.datastore)
 
