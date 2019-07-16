@@ -26,7 +26,6 @@ class OrcaCache:
         self.workflow_file_cache = w
         self.mem_cache = mc
 
-
     def fetch(self, task_name, filters=(), snapshot=None):
         if task_name not in self.mem_cache:
             self.mem_cache[task_name] = self.workflow_file_cache.task(task_name, snapshot=snapshot).data

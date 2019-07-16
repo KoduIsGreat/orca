@@ -32,10 +32,10 @@ class OrcaJsonEncoder(json.JSONEncoder):
                 "value": o.strftime("%s %s" % (self.DATE_FORMAT, self.TIME_FORMAT))
             }
         if isinstance(o, (bytes, bytearray)):
-             return {
+            return {
                 '_type': "bytes",
                 'value': o.decode()
-                }
+            }
        
         return super(OrcaJsonEncoder, self).default(o)
 

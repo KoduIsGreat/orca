@@ -115,7 +115,7 @@ def execute_http(task: OrcaTask) -> None:
                 'text/plain': lambda r: {'text': str(r.content)}
             }
             ct = response.headers.get('content-type').split(';')[0]
-            transform_resp = switch.get(ct, lambda r: {'data': r.content} )
+            transform_resp = switch.get(ct, lambda r: {'data': r.content})
             return transform_resp(response)
         except KeyError:
             raise ExecutionError('an Invalid content type was defined')
