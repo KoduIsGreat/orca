@@ -1,6 +1,6 @@
 #PW:=$(shell cat ~/.pypipw)
 
-VERSION=0.4.0
+VERSION=0.5.4-dev1
 
 sdist:
 	echo "name = 'orca'" > orca/__init__.py
@@ -26,7 +26,12 @@ run:
 	python3 orca run -v $(file)
 	
 test:
-	python3 -m unittest tests/*_test.py
+	python3 -m unittest tests/integration/*_test.py
+	python3 -m unittest tests/unit/*_test.py
+#	python3 -m unittest tests/fixtures/configs/*_test.py
+
+test_docs:
+	(cd docs && mkdocs serve)
 	
 format:
 	find . -name '*.py' -exec autopep8 --in-place '{}' \;
