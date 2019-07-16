@@ -48,3 +48,15 @@ install package locally
 pip install dist/orca-<version>.tar.gz
 ```
 
+
+## Incrementing package versions
+major.minor.patch-release{build}
+
+To increment the package version by a build number use
+`bumpversion build`
+
+To increment the package version by a minor version / 
+`bumpversion minor` or `bumpversion patch`
+
+To generate a release version run 
+`bumpversion release`
