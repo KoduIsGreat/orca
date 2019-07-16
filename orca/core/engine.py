@@ -14,6 +14,7 @@ import requests
 import subprocess as subp
 from csip import Client
 import json
+import sys
 from orca.core import cache
 log = logging.getLogger(__name__)
 
@@ -49,6 +50,8 @@ def execute_python(_task: OrcaTask, orca_config: OrcaConfig):
     resolved_file = resolve_file_path(orca_config, _task.python, ".py")
     config = _task.config
     try:
+        if '.' not in sys.path:
+            sys.path.append('.')
         if resolved_file is None:
             exec(_task.python, _task.locals)
         else:
@@ -112,7 +115,7 @@ def execute_http(task: OrcaTask) -> None:
                 'text/plain': lambda r: {'text': str(r.content)}
             }
             ct = response.headers.get('content-type').split(';')[0]
-            transform_resp = switch.get(ct)
+            transform_resp = switch.get(ct, lambda r: {'data': r.content} )
             return transform_resp(response)
         except KeyError:
             raise ExecutionError('an Invalid content type was defined')
@@ -155,6 +158,7 @@ def execute_bash(_task: OrcaTask) -> Dict:
         o = ""
         for line in out.decode('utf-8').split(delimiter):
             if line:
+                print(line)
                 o += line + '\n'
         return o
     return {}
