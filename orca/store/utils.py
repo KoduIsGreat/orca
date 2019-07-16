@@ -31,7 +31,12 @@ class OrcaJsonEncoder(json.JSONEncoder):
                 '_type': "datetime",
                 "value": o.strftime("%s %s" % (self.DATE_FORMAT, self.TIME_FORMAT))
             }
-
+        if isinstance(o, (bytes, bytearray)):
+             return {
+                '_type': "bytes",
+                'value': o.decode()
+                }
+       
         return super(OrcaJsonEncoder, self).default(o)
 
 
@@ -45,6 +50,9 @@ class OrcaJsonDecoder(json.JSONDecoder):
         _type = obj['_type']
         if _type == 'datetime':
             return parser.parse(obj['value'])
+        if _type == 'bytes':
+            return str.encode(obj['value'])
+       
 
 def __write_json__(file_path: Path, data={}):
     json_str = json.dumps(data, cls=OrcaJsonEncoder)
