@@ -2,19 +2,20 @@
 
 VERSION=0.5.4-dev1
 
+bumpversion:
+    bumpversion build
+
 sdist:
-	echo "name = 'amanzi.orca'" > orca/__init__.py
-	echo "__version__ = '$(VERSION)'" >> orca/__init__.py
 	python3 setup.py sdist
 
 #upload: sdist
-#	twine upload -r pypi -p $(PW) dist/orca-$(VERSION).tar.gz
+#	twine upload -r pypi -p $(PW) dist/amanzi.orca-$(VERSION).tar.gz
 
 install: sdist
-	pip3 install dist/orca-$(VERSION).tar.gz
+	pip3 install dist/amanzi.orca-$(VERSION).tar.gz
 
 uninstall:
-	pip3 uninstall -y orca
+	pip3 uninstall -y amanzi.orca
 
 clean:
 	rm -rf dist *.egg-info tests/fixtures/configs/.dot
@@ -34,5 +35,5 @@ test_docs:
 	(cd docs && mkdocs serve)
 	
 format:
-	find . -name '*.py' -exec autopep8 --in-place '{}' \;
+	flake8 . && black .
 

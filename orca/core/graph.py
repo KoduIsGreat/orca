@@ -5,11 +5,20 @@ from orca.core.handler import walk
 # TODO clean up node
 # TODO integrate graph into exec to do implicit parallelization, perhaps use queue + worker pool strategy?
 
+
 class Node(object):
     def __repr__(self):
         return "orca.core.graph.Node<{0}, {1}>".format(self.name, self.connections)
 
-    def __init__(self, name, connections, annotation=None, task=None, came_from=None, is_root=True):
+    def __init__(
+        self,
+        name,
+        connections,
+        annotation=None,
+        task=None,
+        came_from=None,
+        is_root=True,
+    ):
         self.name = name
         self.connections = connections
         self.came_from = came_from
@@ -28,7 +37,9 @@ class Graph(object):
         if visited_nodes is None:
             visited_nodes = {}
         if current_node is None:
-            current_node = self.roots[0]  # defaults to first root if current node is not provided
+            current_node = self.roots[
+                0
+            ]  # defaults to first root if current node is not provided
         if current_node.name in visited_nodes:
             return
         visited_nodes[current_node.name] = True
@@ -39,20 +50,20 @@ class Graph(object):
         return visited_nodes
 
 
-def loads(config: OrcaConfig) -> 'Graph':
+def loads(config: OrcaConfig) -> "Graph":
     node_map = {}
     for task in walk(config.job, visit_all_tasks=True):
-        to_name = task.get('task')
+        to_name = task.get("task")
         to_node = node_map.get(to_name, None)
         if to_node is None:
             to_node = Node(to_name, [], task=task)
             node_map[to_name] = to_node
 
-        inputs = task.get('inputs', {})
+        inputs = task.get("inputs", {})
 
         for k, v in inputs.items():
-            if str(v).startswith('task.'):
-                split = str(v).split('.')
+            if str(v).startswith("task."):
+                split = str(v).split(".")
                 upstream_task = split[1]
                 from_node = node_map.get(upstream_task, None)
                 if from_node is None:
@@ -65,7 +76,3 @@ def loads(config: OrcaConfig) -> 'Graph':
     roots = [v for k, v in node_map.items() if v.is_root]
 
     return Graph(node_map, roots)
-
-
-
-

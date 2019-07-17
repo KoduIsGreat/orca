@@ -2,7 +2,6 @@ from orca.store import utils
 
 
 class Task(object):
-
     def __repr__(self):
         return "orca.store.task <%s,%s>" % (self.workflow, self.task)
 
@@ -15,7 +14,7 @@ class Task(object):
         self._path = utils.build_path(datastore, workflow, task)
 
         if snapshot:
-            snap_path = utils.build_path(datastore, workflow, '_snapshots', snapshot)
+            snap_path = utils.build_path(datastore, workflow, "_snapshots", snapshot)
 
             self._path = utils.build_path(snap_path, task)
 
@@ -27,4 +26,3 @@ class Task(object):
 
         self.metadata = utils.read_metadata(self._path)
         self.data = utils.read_data(self._path, filters=filters)
-

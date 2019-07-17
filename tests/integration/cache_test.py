@@ -5,5 +5,5 @@ config = config
 
 
 def test_connect(config):
-    c = connect(config('cache_tests.yaml'))
+    c = connect(config("cache_tests.yaml"))
     assert c.cache is not None

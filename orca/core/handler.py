@@ -20,6 +20,7 @@ from orca.core.config import var  # noqa: F401
 # TODO update walk to annotate tasks with their potential conditional (if, switch, for)
 # TODO remove deprecated code, update dotfile handling to use graph
 
+
 def walk(job: List, run_globals={}, visit_all_tasks: bool = False):
     """ Generator function that walks the job hierarchy
         each iteration of the generator returns a dictionary containing the task definition.
@@ -30,56 +31,66 @@ def walk(job: List, run_globals={}, visit_all_tasks: bool = False):
     def empty():
         yield from ()
 
-    def _handle_if(condition_block: Dict, run_globals={}, visit_children: bool = False) -> Generator:
+    def _handle_if(
+        condition_block: Dict, run_globals={}, visit_children: bool = False
+    ) -> Generator:
         """Handle 'if'"""
-        cond = condition_block['if']
-        sequence = condition_block['do']
+        cond = condition_block["if"]
+        sequence = condition_block["do"]
         if eval(cond, globals(), run_globals) or visit_children:
             return walk(sequence, run_globals, visit_children)
         return empty()
 
-    def _handle_switch(condition_block: Dict, run_globals, visit_children: bool = False) -> Generator:
+    def _handle_switch(
+        condition_block: Dict, run_globals, visit_children: bool = False
+    ) -> Generator:
         """Handle 'switch'"""
         if visit_children:
             # gather all tasks from all conditions
-            return chain.from_iterable([
-                walk(condition_block[k], run_globals, visit_all_tasks) for k in condition_block.keys() if k != 'switch']
+            return chain.from_iterable(
+                [
+                    walk(condition_block[k], run_globals, visit_all_tasks)
+                    for k in condition_block.keys()
+                    if k != "switch"
+                ]
             )
-        cond = condition_block['switch']
+        cond = condition_block["switch"]
         case = eval(cond, globals(), run_globals)
-        seq = condition_block.get(case, condition_block.get('default', None))
+        seq = condition_block.get(case, condition_block.get("default", None))
         if seq is not None:
             return walk(seq, run_globals, visit_children)
         else:
             return empty()
 
-    def _handle_for(condition_block: Dict, run_globals, visit_children: bool) -> Generator:
+    def _handle_for(
+        condition_block: Dict, run_globals, visit_children: bool
+    ) -> Generator:
         """Handle 'for'"""
-        var_expr = condition_block['for']
+        var_expr = condition_block["for"]
         i = var_expr.find(",")
         if i == -1:
-            raise ConfigurationError(
-                'Invalid "for" expression: "{0}"'.format(var_expr))
+            raise ConfigurationError('Invalid "for" expression: "{0}"'.format(var_expr))
 
         var = var_expr[:i]
         if not var.isidentifier():
-            raise ConfigurationError(
-                'Not a valid identifier: "{0}"'.format(var))
+            raise ConfigurationError('Not a valid identifier: "{0}"'.format(var))
 
-        expr = var_expr[i + 1:]
+        expr = var_expr[i + 1 :]
         for i in eval(expr, globals(), run_globals):
             # mapping loop variable 'i' to 'var'
-            q = ''
+            q = ""
             if isinstance(i, str):
                 q = "'"
             s = "{0}={2}{1}{2}".format(var, i, q)
             exec(s, globals(), run_globals)
-            yield walk(condition_block['do'], run_globals, visit_children)
+            yield walk(condition_block["do"], run_globals, visit_children)
             if visit_children:
                 # Only one iteration if we wanna visit all the childrens
                 break
 
-    def _handle_fork(jobs: Dict, run_globals, visit_children: bool = False) -> List[List[OrcaTask]]:
+    def _handle_fork(
+        jobs: Dict, run_globals, visit_children: bool = False
+    ) -> List[List[OrcaTask]]:
         """Handle 'fork'"""
 
         def get_tasks(j: List[OrcaTask], run_globals, visit_children) -> List[OrcaTask]:
@@ -93,14 +104,14 @@ def walk(job: List, run_globals={}, visit_all_tasks: bool = False):
     for step in job:
         node = next(iter(step))
         if node == "task":
-            log.debug(" ---- task: '{}'".format(step['task']))
+            log.debug(" ---- task: '{}'".format(step["task"]))
             yield step
         elif node == "if":
-            log.debug(" ---- if: '{}'".format(step['if']))
+            log.debug(" ---- if: '{}'".format(step["if"]))
             for t in _handle_if(step, run_globals, visit_all_tasks):
                 yield t
         elif node == "for":
-            log.debug(" ---- for: '{}'".format(step['for']))
+            log.debug(" ---- for: '{}'".format(step["for"]))
             g = _handle_for(step, run_globals, visit_all_tasks)
             for t in g:
                 if isinstance(t, Generator):
@@ -110,15 +121,14 @@ def walk(job: List, run_globals={}, visit_all_tasks: bool = False):
                     yield t
         elif node.startswith("fork"):
             log.debug(" ---- fork: ")
-            for tl in _handle_fork(step['fork'], run_globals, visit_all_tasks):
+            for tl in _handle_fork(step["fork"], run_globals, visit_all_tasks):
                 yield tl
         elif node == "switch":
-            log.debug(" ---- switch: '{}'".format(step['switch']))
+            log.debug(" ---- switch: '{}'".format(step["switch"]))
             for t in _handle_switch(step, run_globals, visit_all_tasks):
                 yield t
         else:
-            raise ConfigurationError(
-                'Invalid step in job: "{0}"'.format(node))
+            raise ConfigurationError('Invalid step in job: "{0}"'.format(node))
 
 
 def values_tostr(d: Dict) -> Dict:
@@ -152,23 +162,22 @@ class OrcaHandler(metaclass=ABCMeta):
         for step in sequence:
             node = next(iter(step))
             if node == "task":
-                log.debug(" ---- task: '{}'".format(step['task']))
+                log.debug(" ---- task: '{}'".format(step["task"]))
                 self._handle_task(step)
             elif node == "if":
-                log.debug(" ---- if: '{}'".format(step['if']))
+                log.debug(" ---- if: '{}'".format(step["if"]))
                 self._handle_if(step)
             elif node == "for":
-                log.debug(" ---- for: '{}'".format(step['for']))
+                log.debug(" ---- for: '{}'".format(step["for"]))
                 self._handle_for(step)
             elif node.startswith("fork"):
                 log.debug(" ---- fork: ")
-                self._handle_fork(step['fork'])
+                self._handle_fork(step["fork"])
             elif node == "switch":
-                log.debug(" ---- switch: '{}'".format(step['switch']))
+                log.debug(" ---- switch: '{}'".format(step["switch"]))
                 self._handle_switch(step)
             else:
-                raise ConfigurationError(
-                    'Invalid step in job: "{0}"'.format(node))
+                raise ConfigurationError('Invalid step in job: "{0}"'.format(node))
 
     def close(self):
         pass
@@ -191,20 +200,19 @@ class OrcaHandler(metaclass=ABCMeta):
         pass
 
     def select_handler(self, task_dict: Dict):
-        if 'csip' in task_dict:
+        if "csip" in task_dict:
             return self.handle_csip
-        elif 'http' in task_dict:
+        elif "http" in task_dict:
             return self.handle_http
-        elif 'bash' in task_dict:
+        elif "bash" in task_dict:
             return self.handle_bash
-        elif 'python' in task_dict:
+        elif "python" in task_dict:
             return self.handle_python
         else:
-            raise ConfigurationError(
-                'Invalid task type: "{0}"'.format(task_dict))
+            raise ConfigurationError('Invalid task type: "{0}"'.format(task_dict))
 
     def resolve_task_inputs(self, task_dict: Dict) -> Dict:
-        inputs = task_dict.get('inputs', {})
+        inputs = task_dict.get("inputs", {})
         if inputs:
             return {k: eval(str(v), globals()) for k, v in inputs.items()}
         return {}
@@ -217,7 +225,7 @@ class OrcaHandler(metaclass=ABCMeta):
             if os.path.isfile(_name):
                 return _name
             # otherwise find the relative dir
-            elif hasattr(handler, 'config'):
+            elif hasattr(handler, "config"):
                 yaml_dir = handler.config.yaml_dir
             else:
                 yaml_dir = "."
@@ -228,15 +236,14 @@ class OrcaHandler(metaclass=ABCMeta):
                 return rel_path
             else:
                 # this should be a file but it's not.
-                raise ConfigurationError(
-                    'File not found: "{0}"'.format(_name))
+                raise ConfigurationError('File not found: "{0}"'.format(_name))
 
         # check to see if the value ends with an extension
         if name.endswith(ext):
             # check if its an absolute path
             return resolve_file_path(self, name)
         # check if its a variable
-        elif name.startswith('var.'):
+        elif name.startswith("var."):
             try:
                 name = eval(str(name), globals())
             except Exception as e:
@@ -247,7 +254,7 @@ class OrcaHandler(metaclass=ABCMeta):
             return resolve_file_path(self, name)
 
     def _handle_task(self, task_dict: Dict) -> OrcaTask:
-        name = task_dict.get('task', None)
+        name = task_dict.get("task", None)
 
         # check the symbol table for task name to be an unique and valid name
         self._check_symtable(name, task_dict)
@@ -261,12 +268,11 @@ class OrcaHandler(metaclass=ABCMeta):
 
         # select the handler and call handle
         handle = self.select_handler(task_dict)
-        log.info('Starting task {0}'.format(name))
+        log.info("Starting task {0}".format(name))
         handle(_task)
-        log.info('Task {0} completed'.format(name, ))
+        log.info("Task {0} completed".format(name))
 
-        log.debug("task '{0}' locals post: {1}".format(
-            _task.name, _task.locals))
+        log.debug("task '{0}' locals post: {1}".format(_task.name, _task.locals))
 
         # put the task_locals into the global task dictonary
         # this includes input and outputs
@@ -279,44 +285,44 @@ class OrcaHandler(metaclass=ABCMeta):
     # control structures
     def _handle_if(self, condition_block: Dict) -> None:
         """Handle 'if'"""
-        cond = condition_block['if']
-        sequence = condition_block['do']
+        cond = condition_block["if"]
+        sequence = condition_block["do"]
         if eval(cond, globals()):
             self._handle_sequence(sequence)
 
-    def _handle_switch(self, condition_block: Dict, visit_children: bool = False) -> None:
+    def _handle_switch(
+        self, condition_block: Dict, visit_children: bool = False
+    ) -> None:
         """Handle 'switch'"""
-        cond = condition_block['switch']
+        cond = condition_block["switch"]
         case = eval(cond, globals())
-        seq = condition_block.get(case, condition_block.get('default', None))
+        seq = condition_block.get(case, condition_block.get("default", None))
         if visit_children:
             for k in condition_block.keys():
-                if k != 'switch':
+                if k != "switch":
                     self._handle_sequence(condition_block[k])
         elif seq is not None:
             self._handle_sequence(seq)
 
     def _handle_for(self, condition_block: Dict) -> None:
         """Handle 'for'"""
-        var_expr = condition_block['for']
+        var_expr = condition_block["for"]
         i = var_expr.find(",")
         if i == -1:
-            raise ConfigurationError(
-                'Invalid "for" expression: "{0}"'.format(var_expr))
+            raise ConfigurationError('Invalid "for" expression: "{0}"'.format(var_expr))
 
         var = var_expr[:i]
         if not var.isidentifier():
-            raise ConfigurationError(
-                'Not a valid identifier: "{0}"'.format(var))
+            raise ConfigurationError('Not a valid identifier: "{0}"'.format(var))
 
-        expr = var_expr[i + 1:]
+        expr = var_expr[i + 1 :]
         for i in eval(expr, globals()):
             # mapping loop variable 'i' to 'var'
-            q = ''
+            q = ""
             if isinstance(i, str):
                 q = "'"
             exec("{0}={2}{1}{2}".format(var, i, q), globals())
-            self._handle_sequence(condition_block['do'])
+            self._handle_sequence(condition_block["do"])
 
     def _handle_fork(self, sequences: Dict) -> None:
         """Handle 'fork'"""
@@ -336,7 +342,7 @@ class ExecutionHandler(OrcaHandler):
         self.ledger = ledger or Ledger()
 
     def handle(self, config: OrcaConfig) -> None:
-        log.info('Executing workflow...')
+        log.info("Executing workflow...")
         self.ledger.set_config(config)
         super().handle(config)
 
@@ -357,9 +363,13 @@ class ExecutionHandler(OrcaHandler):
                     client.add_data(key, value)
             client = client.execute(_task.csip)
             for k, v in client.data.items():
-                _task.locals[k] = v['value']
+                _task.locals[k] = v["value"]
         except requests.exceptions.HTTPError as e:
-            raise ExecutionError('An Error occured while making the request:\n {0}'.format(e.response.content))
+            raise ExecutionError(
+                "An Error occured while making the request:\n {0}".format(
+                    e.response.content
+                )
+            )
 
     def handle_http(self, _task: OrcaTask) -> None:
         def is_dotted(d) -> Dict:
@@ -370,39 +380,49 @@ class ExecutionHandler(OrcaHandler):
         def handle_method(_task: OrcaTask) -> requests.Response:
             try:
                 switch = {
-                    'GET': lambda _task: requests.get(_task.http, is_dotted(_task.locals), verify=False),
-                    'PUT': lambda _task, data: requests.put(_task.http, is_dotted(_task.locals), verify=False),
-                    'POST': lambda _task: requests.post(_task.http, json=is_dotted(_task.locals), verify=False),
-                    'DELETE': lambda _task: requests.delete(_task.http, verify=False)
+                    "GET": lambda _task: requests.get(
+                        _task.http, is_dotted(_task.locals), verify=False
+                    ),
+                    "PUT": lambda _task, data: requests.put(
+                        _task.http, is_dotted(_task.locals), verify=False
+                    ),
+                    "POST": lambda _task: requests.post(
+                        _task.http, json=is_dotted(_task.locals), verify=False
+                    ),
+                    "DELETE": lambda _task: requests.delete(_task.http, verify=False),
                 }
-                m = _task.config.get('method', 'GET')
+                m = _task.config.get("method", "GET")
                 http = switch.get(m)
                 return http(_task)
             except KeyError:
                 raise ConfigurationError(
-                    'task {0} defines an invalid http method: {1}'.format(_task.name, _task.config.get('method'))
+                    "task {0} defines an invalid http method: {1}".format(
+                        _task.name, _task.config.get("method")
+                    )
                 )
 
         def handle_response(response: requests.Response) -> Dict:
             try:
 
                 switch = {
-                    'application/json': lambda r: {'json': json.loads(r.content)},
-                    'text/html': lambda r: {'html': r.content},
-                    'text/plain': lambda r: {'text': r.content}
+                    "application/json": lambda r: {"json": json.loads(r.content)},
+                    "text/html": lambda r: {"html": r.content},
+                    "text/plain": lambda r: {"text": r.content},
                 }
-                ct = response.headers.get('content-type').split(';')[0]
+                ct = response.headers.get("content-type").split(";")[0]
                 transform_resp = switch.get(ct)
                 return transform_resp(response)
             except KeyError:
-                raise ConfigurationError('an Invalid content type was defined')
+                raise ConfigurationError("an Invalid content type was defined")
 
         http_response = handle_method(_task)
 
         if http_response.status_code >= 400:
-            _task.status = 'failed'
+            _task.status = "failed"
             raise ExecutionError(
-                'The http task {0} returned a non 200 status code: {1}'.format(_task.name, http_response.status_code)
+                "The http task {0} returned a non 200 status code: {1}".format(
+                    _task.name, http_response.status_code
+                )
             )
 
         _task_payload = handle_response(http_response)
@@ -411,8 +431,9 @@ class ExecutionHandler(OrcaHandler):
             _task.locals[key] = _task_payload[key]
 
         # remove after execution
-        keys_to_remove = [k for k in _task.locals if
-                          k not in _task.outputs and k not in _task.inputs]
+        keys_to_remove = [
+            k for k in _task.locals if k not in _task.outputs and k not in _task.inputs
+        ]
 
         for key in keys_to_remove:
             del _task.locals[key]
@@ -421,41 +442,42 @@ class ExecutionHandler(OrcaHandler):
         env = {}
         config = _task.config
         # get defaults
-        delimiter = config.get('delimiter', '\n')
-        wd = config.get('wd', None)
+        delimiter = config.get("delimiter", "\n")
+        wd = config.get("wd", None)
         if len(_task.locals) > 0:
             env = values_tostr(_task.locals)
-        sp = subp.Popen(_task.bash, env=env, shell=True,
-                        stdout=subp.PIPE, stderr=subp.PIPE, cwd=wd)
+        sp = subp.Popen(
+            _task.bash, env=env, shell=True, stdout=subp.PIPE, stderr=subp.PIPE, cwd=wd
+        )
         out, err = sp.communicate()
         if sp.returncode != 0:
-            log.error('return code: {0}'.format(sp.returncode))
+            log.error("return code: {0}".format(sp.returncode))
         if err:
-            for line in err.decode('utf-8').split(delimiter):
+            for line in err.decode("utf-8").split(delimiter):
                 log.error("ERROR: " + line)
         if out:
             o = ""
-            for line in out.decode('utf-8').split(delimiter):
+            for line in out.decode("utf-8").split(delimiter):
                 if line:
-                    o += line + '\n'
+                    o += line + "\n"
             return o
         return {}
 
     def __get_call_string(self, config: Dict, script: str):
-        func_name = config.get('callable')
-        var_name = config.get('returns', '')
+        func_name = config.get("callable")
+        var_name = config.get("returns", "")
         # match against a function definition string : def <funcname> ( args,...)
-        pattern = r'((?P<keyword>def)\s?(?P<function>\w+)\s?\((?P<args>(?P<arg>\w+(,\s?)?)+)?\))'
+        pattern = r"((?P<keyword>def)\s?(?P<function>\w+)\s?\((?P<args>(?P<arg>\w+(,\s?)?)+)?\))"
         # find all functions in the file
         all_funcs = re.findall(pattern, script)
         # take each function string and break it up into a dictionary so we can easily extract the arguments
         dicts = [re.match(pattern, func[0]).groupdict() for func in all_funcs]
         # filter the list of functions for the function the user has defined
-        fn_dict = [d for d in dicts if d.get('function') == func_name][0]
+        fn_dict = [d for d in dicts if d.get("function") == func_name][0]
         # make the string that will be eval'd
-        assignment = var_name if var_name == '' else var_name + ' = '
-        args = '' if fn_dict.get('args', '') is None else fn_dict.get('args')
-        return '{0}{1}({2})'.format(assignment, func_name, args)
+        assignment = var_name if var_name == "" else var_name + " = "
+        args = "" if fn_dict.get("args", "") is None else fn_dict.get("args")
+        return "{0}{1}({2})".format(assignment, func_name, args)
 
     def handle_python(self, _task: OrcaTask):
         log.debug("  exec python file : " + _task.python)
@@ -466,27 +488,34 @@ class ExecutionHandler(OrcaHandler):
             if resolved_file is None:
                 exec(_task.python, _task.locals)
             else:
-                with open(resolved_file, 'r') as script:
-                    _task.locals['__file__'] = resolved_file  # if they want to reference __file__ in their script
-                    _task.locals['__name__'] = script.name  # or the name
+                with open(resolved_file, "r") as script:
+                    _task.locals[
+                        "__file__"
+                    ] = (
+                        resolved_file
+                    )  # if they want to reference __file__ in their script
+                    _task.locals["__name__"] = script.name  # or the name
                     _python = script.read()
                     exec(_python, _task.locals)
-                    if 'callable' in config:
+                    if "callable" in config:
                         call_str = self.__get_call_string(config, _python)
                         exec(call_str, _task.locals)
 
             _task.status = "success"
         except IndexError:
             raise ExecutionError(
-                'The function {0} was not defined in the file: {1}'.format(_task.config.get('callable'), _task.python)
+                "The function {0} was not defined in the file: {1}".format(
+                    _task.config.get("callable"), _task.python
+                )
             )
         except BaseException as e:
             _task.status = "failed"
             log.debug(str(e))
             raise
         # remove after execution
-        keys_to_remove = [k for k in _task.locals if
-                          k not in _task.outputs and k not in _task.inputs]
+        keys_to_remove = [
+            k for k in _task.locals if k not in _task.outputs and k not in _task.inputs
+        ]
 
         for key in keys_to_remove:
             del _task.locals[key]
@@ -505,14 +534,18 @@ class ValidationHandler(OrcaHandler):
         r = requests.head(_task.csip)
         if r.status_code >= 400:
             raise ConfigurationError(
-                'Task {0} defines a CSIP endpoint that is not accessible: "{1}"'.format(_task.name, _task.csip)
+                'Task {0} defines a CSIP endpoint that is not accessible: "{1}"'.format(
+                    _task.name, _task.csip
+                )
             )
 
     def handle_http(self, _task: OrcaTask):
         r = requests.head(_task.http)
         if r.status_code >= 400:
             raise ConfigurationError(
-                'Task {0} defines a Http url that is not accessible: "{1}"'.format(_task.name, _task.http)
+                'Task {0} defines a Http url that is not accessible: "{1}"'.format(
+                    _task.name, _task.http
+                )
             )
 
     def handle_bash(self, _task: OrcaTask):
@@ -520,7 +553,10 @@ class ValidationHandler(OrcaHandler):
             self._resolve_file_path(_task.bash, ".sh")
         except ConfigurationError as e:
             raise ConfigurationError(
-                'Task {0} defines a bash script that cannot be found: {1}'.format(_task.name, _task.bash), e
+                "Task {0} defines a bash script that cannot be found: {1}".format(
+                    _task.name, _task.bash
+                ),
+                e,
             )
 
     def handle_python(self, _task: OrcaTask):
@@ -528,7 +564,10 @@ class ValidationHandler(OrcaHandler):
             self._resolve_file_path(_task.python, ".py")
         except ConfigurationError as e:
             raise ConfigurationError(
-                'Task {0} defines a python script that cannot be found: {1}'.format(_task.name, _task.python), e
+                "Task {0} defines a python script that cannot be found: {1}".format(
+                    _task.name, _task.python
+                ),
+                e,
             )
 
 
@@ -565,20 +604,21 @@ class DotfileHandler(OrcaHandler):
 
     def handle(self, config: OrcaConfig) -> None:
         self.config = config
-        self.dot = ['digraph {',
-                    'START [shape=doublecircle,color=gray,fontsize=10]',
-                    'END [shape=doublecircle,color=gray,fontsize=10]',
-                    'node [style="filled",fontsize=10,fillcolor=aliceblue,color=gray,fixedsize=true]',
-                    'edge [fontsize=9,fontcolor=dodgerblue3]'
-                    ]
-        self.last_task = 'START'
-        self.last_vertex_label = ''
+        self.dot = [
+            "digraph {",
+            "START [shape=doublecircle,color=gray,fontsize=10]",
+            "END [shape=doublecircle,color=gray,fontsize=10]",
+            'node [style="filled",fontsize=10,fillcolor=aliceblue,color=gray,fixedsize=true]',
+            "edge [fontsize=9,fontcolor=dodgerblue3]",
+        ]
+        self.last_task = "START"
+        self.last_vertex_label = ""
         # first pass: node declaration
         self.decl = True
         # unique id for each node
         self.idx = 0
         self._handle_sequence(config.job)
-        self.dot.append('')
+        self.dot.append("")
         # second pass: vertices
         self.decl = False
         self.idx = 0
@@ -592,88 +632,102 @@ class DotfileHandler(OrcaHandler):
         self.idx += 1
         if self.decl:
             self.dot.append(
-                '{0} [shape=house,fillcolor=cornsilk,fontcolor="dodgerblue3",label="FORK"]'.format(name))
-            self.dot.append('{0} [shape=point]'.format(term))
+                '{0} [shape=house,fillcolor=cornsilk,fontcolor="dodgerblue3",label="FORK"]'.format(
+                    name
+                )
+            )
+            self.dot.append("{0} [shape=point]".format(term))
             for sequence in sequences:
                 self._handle_sequence(sequence)
         else:
             self.dot.append(
-                '{0} -> {1} {2}'.format(self.last_task, name, self.last_vertex_label))
-            self.last_vertex_label = ''
+                "{0} -> {1} {2}".format(self.last_task, name, self.last_vertex_label)
+            )
+            self.last_vertex_label = ""
             for sequence in sequences:
                 self.last_task = name
                 self._handle_sequence(sequence)
-                self.dot.append('{0} -> {1}'.format(self.last_task, term))
+                self.dot.append("{0} -> {1}".format(self.last_task, term))
             self.last_task = term
 
-    def _handle_for(self, conditional_block: Dict, ) -> None:
+    def _handle_for(self, conditional_block: Dict) -> None:
         """Handle Looping"""
-        var_expr = conditional_block['for']
-        sequence = conditional_block['do']
+        var_expr = conditional_block["for"]
+        sequence = conditional_block["do"]
         name = "for_{0}".format(self.idx)
         term = "term_{0}".format(self.idx)
         self.idx += 1
         if self.decl:
             self.dot.append(
-                '{0} [shape=trapezium,fillcolor=cornsilk,fontcolor="dodgerblue3",label="FOR\\n{1}"]'.format(name,
-                                                                                                            var_expr))
-            self.dot.append('{0} [shape=point]'.format(term))
+                '{0} [shape=trapezium,fillcolor=cornsilk,fontcolor="dodgerblue3",label="FOR\\n{1}"]'.format(
+                    name, var_expr
+                )
+            )
+            self.dot.append("{0} [shape=point]".format(term))
             self._handle_sequence(sequence)
         else:
             self.dot.append(
-                '{0} -> {1} {2}'.format(self.last_task, name, self.last_vertex_label))
-            self.last_vertex_label = ''
+                "{0} -> {1} {2}".format(self.last_task, name, self.last_vertex_label)
+            )
+            self.last_vertex_label = ""
             self.last_task = name
             self._handle_sequence(sequence)
-            self.dot.append('{0} -> {1}'.format(self.last_task, term))
+            self.dot.append("{0} -> {1}".format(self.last_task, term))
             self.dot.append('{0} -> {1} [style="dotted"]'.format(term, name))
             self.last_task = term
 
-    def _handle_switch(self, conditional_block: Dict, ) -> None:
+    def _handle_switch(self, conditional_block: Dict) -> None:
         """Handle conditional switch."""
-        cond = conditional_block['switch']
+        cond = conditional_block["switch"]
         cases = conditional_block.copy()
-        cases.pop('switch')
+        cases.pop("switch")
         name = "switch_{0}".format(self.idx)
         term = "term_{0}".format(self.idx)
         self.idx += 1
         if self.decl:
             self.dot.append(
-                '{0} [shape=diamond,fillcolor=cornsilk,fontcolor="dodgerblue3",label="SWITCH\\n{1}"]'.format(name,
-                                                                                                             cond))
-            self.dot.append('{0} [shape=point]'.format(term))
+                '{0} [shape=diamond,fillcolor=cornsilk,fontcolor="dodgerblue3",label="SWITCH\\n{1}"]'.format(
+                    name, cond
+                )
+            )
+            self.dot.append("{0} [shape=point]".format(term))
             for case, seq in cases.items():
                 self._handle_sequence(seq)
         else:
             self.dot.append(
-                '{0} -> {1} {2}'.format(self.last_task, name, self.last_vertex_label))
-            self.last_vertex_label = ''
+                "{0} -> {1} {2}".format(self.last_task, name, self.last_vertex_label)
+            )
+            self.last_vertex_label = ""
             for case, seq in cases.items():
                 self.last_task = name
                 self.last_vertex_label = '[label="{0}"]'.format(case)
                 self._handle_sequence(seq)
-                self.dot.append('{0} -> {1}'.format(self.last_task, term))
+                self.dot.append("{0} -> {1}".format(self.last_task, term))
             self.last_task = term
 
     def _handle_if(self, conditional_block: Dict) -> None:
         """Handle if."""
-        cond = conditional_block['if']
-        sequence = conditional_block['do']
+        cond = conditional_block["if"]
+        sequence = conditional_block["do"]
         name = "if_{0}".format(self.idx)
         term = "term_{0}".format(self.idx)
         self.idx += 1
         if self.decl:
             self.dot.append(
-                '{0} [shape=diamond,fillcolor=cornsilk,fontcolor="dodgerblue3",label="IF\\n{1}"]'.format(name, cond))
-            self.dot.append('{0} [shape=point]'.format(term))
+                '{0} [shape=diamond,fillcolor=cornsilk,fontcolor="dodgerblue3",label="IF\\n{1}"]'.format(
+                    name, cond
+                )
+            )
+            self.dot.append("{0} [shape=point]".format(term))
             self._handle_sequence(sequence)
         else:
             self.dot.append(
-                '{0} -> {1} {2}'.format(self.last_task, name, self.last_vertex_label))
+                "{0} -> {1} {2}".format(self.last_task, name, self.last_vertex_label)
+            )
             self.last_task = name
             self.last_vertex_label = '[label="true"]'
             self._handle_sequence(sequence)
-            self.dot.append('{0} -> {1}'.format(self.last_task, term))
+            self.dot.append("{0} -> {1}".format(self.last_task, term))
             self.dot.append('{0} -> {1} [label="false"]'.format(name, term))
             self.last_task = term
 
@@ -685,42 +739,42 @@ class DotfileHandler(OrcaHandler):
             print("\n".join(self.dot), file=text_file)
         log.info("generated dot file '" + path + ".dot'")
 
-    def _ht(self, name: str, shape: str, label: str = ''):
+    def _ht(self, name: str, shape: str, label: str = ""):
         if self.decl:
             self.dot.append(
-                '{0} [shape={1}, label="\'{0}\'\\n{2}"]'.format(name, shape, label))
+                "{0} [shape={1}, label=\"'{0}'\\n{2}\"]".format(name, shape, label)
+            )
         else:
             self.dot.append(
-                '{0} -> {1} {2}'.format(self.last_task, name, self.last_vertex_label))
-            self.last_vertex_label = ''
+                "{0} -> {1} {2}".format(self.last_task, name, self.last_vertex_label)
+            )
+            self.last_vertex_label = ""
             self.last_task = name
 
     def handle_csip(self, task: OrcaTask):
-        self._ht(task.name, 'cds', task.csip)
+        self._ht(task.name, "cds", task.csip)
 
     def handle_http(self, task: OrcaTask):
-        self._ht(task.name, 'cds', task.http)
+        self._ht(task.name, "cds", task.http)
 
     def handle_bash(self, task: OrcaTask):
-        self._ht(task.name, 'note')
+        self._ht(task.name, "note")
 
     def handle_python(self, task: OrcaTask):
-        self._ht(task.name, 'note', task.python)
+        self._ht(task.name, "note", task.python)
 
     def _handle_task(self, task_dict: Dict):
-
         def select_handler(self, task_dict: Dict):
-            if 'csip' in task_dict:
+            if "csip" in task_dict:
                 return self.handle_csip
-            elif 'http' in task_dict:
+            elif "http" in task_dict:
                 return self.handle_http
-            elif 'bash' in task_dict:
+            elif "bash" in task_dict:
                 return self.handle_bash
-            elif 'python' in task_dict:
+            elif "python" in task_dict:
                 return self.handle_python
             else:
-                raise ConfigurationError(
-                    'Invalid task type: "{0}"'.format(task_dict))
+                raise ConfigurationError('Invalid task type: "{0}"'.format(task_dict))
 
         handle = select_handler(self, task_dict)
         _task = OrcaTask(task_dict, {})

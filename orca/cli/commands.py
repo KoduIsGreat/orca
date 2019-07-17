@@ -15,7 +15,7 @@ click_log.basic_config(log)
 
 
 @click.group()
-@click_log.simple_verbosity_option(log, default='INFO')
+@click_log.simple_verbosity_option(log, default="INFO")
 def orca():
     pass
 
@@ -31,10 +31,9 @@ def version():
 def check_format(ctx, param, value):
     if value is None:
         return
-    c = value.split('/')
+    c = value.split("/")
     if len(c) != 3:
-        log.error(
-            "Invalid mongo connect string, expected '<host[:port]>/<db>/<col>'")
+        log.error("Invalid mongo connect string, expected '<host[:port]>/<db>/<col>'")
         ctx.exit()
     return c
 
@@ -42,10 +41,9 @@ def check_format(ctx, param, value):
 def check_format_kafka(ctx, param, value):
     if value is None:
         return
-    c = value.split('/')
+    c = value.split("/")
     if len(c) != 2:
-        log.error(
-            "Invalid kafka connect string, expected '<host[:port]>/topic'")
+        log.error("Invalid kafka connect string, expected '<host[:port]>/topic'")
         ctx.exit()
     return c
 
@@ -57,14 +55,23 @@ def check_format_kafka(ctx, param, value):
 # maybe import file into a db:
 # mongoimport --db orca --collection ledger --file /tmp/f.json
 
+
 @orca.command()
-@click.option('--ledger-json', type=click.Path(), help='file ledger.')
-@click.option('--ledger-mongo', type=str,
-              help='mongodb ledger, TEXT format "<host[:port]>/<db>/<col>".', callback=check_format)
-@click.option('--ledger-kafka', type=str,
-              help='kafka ledger, TEXT format "<host[:port]>/topic".', callback=check_format_kafka)
-@click.argument('file', type=click.File('r'))
-@click.argument('args', nargs=-1)
+@click.option("--ledger-json", type=click.Path(), help="file ledger.")
+@click.option(
+    "--ledger-mongo",
+    type=str,
+    help='mongodb ledger, TEXT format "<host[:port]>/<db>/<col>".',
+    callback=check_format,
+)
+@click.option(
+    "--ledger-kafka",
+    type=str,
+    help='kafka ledger, TEXT format "<host[:port]>/topic".',
+    callback=check_format_kafka,
+)
+@click.argument("file", type=click.File("r"))
+@click.argument("args", nargs=-1)
 def run(ledger_json, ledger_mongo, ledger_kafka, file, args):
     """
     Run an orca workflow.
@@ -85,8 +92,8 @@ def run(ledger_json, ledger_mongo, ledger_kafka, file, args):
 
 
 @orca.command()
-@click.argument('file', type=click.File('r'))
-@click.argument('args', nargs=-1)
+@click.argument("file", type=click.File("r"))
+@click.argument("args", nargs=-1)
 def check(file, args):
     """
     Validate an orca workflow.
@@ -106,8 +113,8 @@ def check(file, args):
 #    $ dot -Tpng switch.dot -o switch.png
 #    $ dot -Tsvg switch.dot -o switch.svg
 @orca.command()
-@click.argument('file', type=click.File('r'))
-@click.argument('args', nargs=-1)
+@click.argument("file", type=click.File("r"))
+@click.argument("args", nargs=-1)
 def egraph(file, args):
     """
     Create a execution graph from an orca workflow using graphviz
@@ -123,9 +130,10 @@ def egraph(file, args):
         log.error(e)
         raise
 
+
 @orca.command()
-@click.argument('file', type=click.File('r'))
-@click.argument('args', nargs=-1)
+@click.argument("file", type=click.File("r"))
+@click.argument("args", nargs=-1)
 def dgraph(file, args):
     """
        Create a dependency graph of the orca workflow using graphviz
@@ -134,9 +142,9 @@ def dgraph(file, args):
        """
     try:
         config = OrcaConfig.create(file, args)
-        file_name = file.name.replace('.yaml', '.dot')
-        with open(file_name, 'w') as f:
-            n = str(config.name).replace(' ', '_').replace('\'', '')
+        file_name = file.name.replace(".yaml", ".dot")
+        with open(file_name, "w") as f:
+            n = str(config.name).replace(" ", "_").replace("'", "")
             f.write(" digraph " + n + " {\n")
             g = graph.loads(config)
             visited = {}
