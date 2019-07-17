@@ -38,6 +38,7 @@ lint and format
 ```bash
 flake8 . && black .
 ```
+Optionally configure black for your desired editor: [blacks documentation](https://github.com/python/black)
 
 Run tests
 ```bash
