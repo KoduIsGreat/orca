@@ -6,9 +6,8 @@ from orca.store.workflow import Workflow
 
 
 class store(object):
-
     def __repr__(self):
-        return 'orca.datastore <%s>' % self.datastore
+        return "orca.datastore <%s>" % self.datastore
 
     def __init__(self, datastore):
         data_path = utils.get_path()
@@ -30,7 +29,7 @@ class store(object):
                 raise ValueError("Workflow exists! to Overwrite use overwrite=True")
 
         os.makedirs(workflow_path.__bytes__())
-        os.makedirs(utils.build_path(workflow_path, '_snapshots').__bytes__())
+        os.makedirs(utils.build_path(workflow_path, "_snapshots").__bytes__())
 
         self.workflows = self.list_workflows()
 

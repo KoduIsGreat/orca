@@ -5,10 +5,12 @@ from tests.util import get_config_path
 
 
 class OrcaCommandTest(unittest.TestCase):
-
     def test_run(self):
         runner = CliRunner()
-        runner.invoke(commands.run, [get_config_path('simple_example.yaml'), '--ledger-json=./test.json'])
+        runner.invoke(
+            commands.run,
+            [get_config_path("simple_example.yaml"), "--ledger-json=./test.json"],
+        )
 
     def test_version(self):
         runner = CliRunner()
@@ -16,12 +18,12 @@ class OrcaCommandTest(unittest.TestCase):
 
     def test_todot(self):
         runner = CliRunner()
-        runner.invoke(commands.egraph, [get_config_path('http_python_csip.yaml')])
+        runner.invoke(commands.egraph, [get_config_path("http_python_csip.yaml")])
 
     def test_todot_leafs(self):
         runner = CliRunner()
-        runner.invoke(commands.egraph, [get_config_path('dot_test.yaml')])
+        runner.invoke(commands.egraph, [get_config_path("dot_test.yaml")])
 
     def test_todot_leafs(self):
         runner = CliRunner()
-        runner.invoke(commands.dgraph, [get_config_path('dot_test.yaml')])
+        runner.invoke(commands.dgraph, [get_config_path("dot_test.yaml")])

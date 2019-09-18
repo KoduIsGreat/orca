@@ -6,7 +6,7 @@ fixture_path = os.path.dirname(__file__)
 
 
 def get_config_path(file_name):
-    return os.path.join(fixture_path, 'fixtures', 'configs', file_name)
+    return os.path.join(fixture_path, "fixtures", "configs", file_name)
 
 
 def get_config(file_name) -> OrcaConfig:

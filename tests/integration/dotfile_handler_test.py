@@ -5,19 +5,18 @@ from tests.util import run_handler
 
 
 class DotFileHandlerTests(unittest.TestCase):
-
     def test_print_switch_task(self):
-        run_handler('switch.yaml', DotfileHandler())
+        run_handler("switch.yaml", DotfileHandler())
 
     def test_print_for_task(self):
-        run_handler('for.yaml', DotfileHandler())
+        run_handler("for.yaml", DotfileHandler())
 
     def test_print_par_task(self):
-        run_handler('par.yaml', DotfileHandler())
+        run_handler("par.yaml", DotfileHandler())
 
     def test_print_for_v_task(self):
-        run_handler('for_with_variable.yaml', DotfileHandler())
+        run_handler("for_with_variable.yaml", DotfileHandler())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

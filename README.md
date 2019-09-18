@@ -11,6 +11,8 @@ Review the following for contributing to this repository.
 
 ## Prerequisites 
 1. pipenv: ` pip install pipenv`
+2. flake8: `pip install flake8`
+3. black: `pip install black`
 
 ## Quickstart
 
@@ -32,6 +34,12 @@ Set the linter to strict in git config
 git config --bool flake8.strict true
 ```
 
+lint and format 
+```bash
+flake8 . && black .
+```
+Optionally configure black for your desired editor: [blacks documentation](https://github.com/python/black)
+
 Run tests
 ```bash
 pipenv run pytest tests
@@ -45,8 +53,10 @@ python setup.py sdist
 
 install package locally
 ```bash
-pip install dist/orca-<version>.tar.gz
+pip install dist/amanzi.orca-<version>.tar.gz
 ```
+
+
 
 
 ## Incrementing package versions

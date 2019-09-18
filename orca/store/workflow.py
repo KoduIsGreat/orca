@@ -7,9 +7,8 @@ import os
 
 
 class Workflow(object):
-
     def __repr__(self):
-        return 'orca.store.workflow <%s>' % self.workflow
+        return "orca.store.workflow <%s>" % self.workflow
 
     def __init__(self, workflow, datastore):
         self.datastore = datastore
@@ -30,9 +29,10 @@ class Workflow(object):
 
         matched = []
         for d in dirs:
-            meta = utils.read_metadata(utils.build_path(
-                self.datastore, self.workflow, d))
-            del meta['_updated']
+            meta = utils.read_metadata(
+                utils.build_path(self.datastore, self.workflow, d)
+            )
+            del meta["_updated"]
 
             m = 0
             keys = list(meta.keys())
@@ -49,9 +49,11 @@ class Workflow(object):
         task_path = self._task_path(task)
 
         if utils.path_exists(task_path) and not overwrite:
-            raise ValueError("""
+            raise ValueError(
+                """
                 Task already already exists in workflow, to overwrite set 'overwrite=True'.
-            """)
+            """
+            )
 
         if not utils.path_exists(task_path):
             os.makedirs(self._task_path(task))
@@ -75,23 +77,22 @@ class Workflow(object):
 
     def create_snapshot(self, snapshot=None):
         if snapshot:
-            snapshot = ''.join(
-                e for e in snapshot if e.isalnum() or e in ['.', '_'])
+            snapshot = "".join(e for e in snapshot if e.isalnum() or e in [".", "_"])
         else:
             snapshot = str(int(time.time() * 1000000))
 
         src = utils.build_path(self.datastore, self.workflow)
-        dst = utils.build_path(src, '_snapshots', snapshot)
+        dst = utils.build_path(src, "_snapshots", snapshot)
 
-        shutil.copytree(src, dst,
-                        ignore=shutil.ignore_patterns("_snapshots"))
+        shutil.copytree(src, dst, ignore=shutil.ignore_patterns("_snapshots"))
 
         self.snapshots = self.list_snapshots()
         return True
 
     def list_snapshots(self):
-        snapshots = utils.subdirs(utils.build_path(
-            self.datastore, self.workflow, '_snapshots'))
+        snapshots = utils.subdirs(
+            utils.build_path(self.datastore, self.workflow, "_snapshots")
+        )
         return snapshots
         # return [s.parts[-1] for s in snapshots]
 
@@ -100,6 +101,8 @@ class Workflow(object):
             # raise ValueError("Snapshot `%s` doesn't exist" % snapshot)
             return True
 
-        shutil.rmtree(utils.build_path(self.datastore, self.workflow, '_snapshots', snapshot))
+        shutil.rmtree(
+            utils.build_path(self.datastore, self.workflow, "_snapshots", snapshot)
+        )
         self.snapshots = self.list_snapshots()
         return True

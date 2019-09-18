@@ -8,10 +8,10 @@ def do_something2(arg1, arg2):
 
 def do_something_dict(arg1, arg2):
     return {
-        'sum': arg1 + arg2,
-        'difference': arg1 - arg2,
-        'product': arg1 * arg2,
-        'quotient': arg1 / arg2
+        "sum": arg1 + arg2,
+        "difference": arg1 - arg2,
+        "product": arg1 * arg2,
+        "quotient": arg1 / arg2,
     }
 
 
@@ -20,4 +20,4 @@ def do_something_no_return(dict):
 
 
 def do_something_no_args():
-    return 'wow'
+    return "wow"
